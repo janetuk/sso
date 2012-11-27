@@ -1,0 +1,9 @@
+*/settings.php
+default/files
+
+#exclude all .tar and .gzfiles
+*.tar
+*.gz
+
+#exclude PHPStorm hidden files
+.idea
