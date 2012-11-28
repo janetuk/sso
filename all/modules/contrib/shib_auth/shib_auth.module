@@ -465,6 +465,7 @@ function shib_auth_load_from_authmap($uname) {
               ->execute()
               ->fetchAssoc();
   dpm($query);
+  watchdog('SHIB', 'load from authmap: ' . $query['uid']);
   db_set_active('default'); // we swich back to the drupal core db
 
   return $query;
