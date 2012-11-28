@@ -426,9 +426,15 @@ function shib_login_authmap($uname, $umail_single, $uid, $alreadyloggedin = Fals
         drupal_goto(shib_auth_config('login_url'));
       }
     }
-    else shib_auth_error('Couldn\'t login user: ' . $authmap_username['name']);
+    else {
+      watchdog('shib DEBUG', 'global user ID not set');
+      shib_auth_error('Couldn\'t login user: ' . $authmap_username['name']);
+    }
   }
-  else shib_auth_error('Couldn\'t login user: ' . $authmap_username['name']);
+  else {
+    watchdog('shib DEBUG', 'can\'t load account by external username');
+    shib_auth_error('Couldn\'t login user: ' . $authmap_username['name']);
+  }
   //redirect user to a predefined page, or a page, she wanted to see before clicking on login
   shib_auth_submit_redirect();
 } //function shib_login_authmap
