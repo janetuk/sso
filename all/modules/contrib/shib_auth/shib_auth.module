@@ -441,7 +441,7 @@ function shib_auth_check_identifier($uname) {
     watchdog('shib_auth', '@msg', array('@msg' => $message), WATCHDOG_CRITICAL);
     return FALSE;
   }
-  elseif (drupal_strlen($uname) > 255) {
+  elseif (drupal_strlen($uname) > 500) {
     $message = 'User identifier is too long to process. Please contact your site administrator!';
     shib_auth_error(t('@msg', array('@msg' => $message)));
     watchdog('shib_auth', '@msg', array('@msg' => $message), WATCHDOG_CRITICAL);
@@ -457,11 +457,18 @@ function shib_auth_check_identifier($uname) {
  *  The authmap item in array if found, NULL otherwise.
  */
 function shib_auth_load_from_authmap($uname) {
-  return db_select('shib_authmap', 'c')
-            ->fields('c')
-            ->condition('targeted_id', $uname, '=')
-            ->execute()
-            ->fetchAssoc();
+
+  db_set_active('community'); // we call our custom db
+  $query = db_select('shib_authmap', 'c')
+              ->fields('c')
+              ->condition('targeted_id', $uname, '=')
+              ->execute()
+              ->fetchAssoc();
+  dpm($query);
+  db_set_active('default'); // we swich back to the drupal core db
+
+  return $query;
+
 } //function shib_auth_load_from_authmap
 
 /**
@@ -743,6 +750,7 @@ function shib_auth_init() {
     return;
   }
   //check if the old user exists in the shibboleth authmap
+  // TODO: need to query community shib_authmap table in this function
   $existing_authmap = shib_auth_load_from_authmap($uname);
 
   //Check whether CONSENT VERSION is CHANGED, if so, users have to accept it again
@@ -1422,3 +1430,4 @@ function shib_auth_get_rolename($rid) {
   shib_auth_error("Internal error: no name for role_id '$rid'");
   return NULL;
 } //function shib_auth_get_rolename()
+
