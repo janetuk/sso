@@ -224,6 +224,19 @@ $databases = array (
       'prefix' => '',
     ),
   ),
+  'community' =>
+  array (
+    'default' =>
+    array (
+      'database' => 'drupal',
+      'username' => 'drupal',
+      'password' => 's3aO!W9m!#xDYlp^',
+      'host' => 'sql-cluster.dev.ja.net',
+      'port' => '',
+      'driver' => 'mysql',
+      'prefix' => '',    
+    ),
+  ),
 );
 
 /**
