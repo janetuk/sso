@@ -215,10 +215,10 @@ $databases = array (
   array (
     'default' => 
     array (
-      'database' => 'ssodev',
-      'username' => 'ssodev',
-      'password' => '0yf37OTSiL&bS*5BjlDg',
-      'host' => 'sql-cluster.dev.ja.net',
+      'database' => 'sso',
+      'username' => 'root',
+      'password' => 'system7',
+      'host' => 'localhost',
       'port' => '',
       'driver' => 'mysql',
       'prefix' => '',
@@ -256,7 +256,7 @@ $update_free_access = FALSE;
  *   $drupal_hash_salt = file_get_contents('/home/example/salt.txt');
  *
  */
-$drupal_hash_salt = 'U1L5X69k5j7pGkEN2fafN_EpjvVRYPpiUX2bVoZK1XM';
+$drupal_hash_salt = 'ckbeE2GUjSGzAiR7o1RMLIoJnvcRoikp5yBCQAFs6jU';
 
 /**
  * Base URL (optional).
