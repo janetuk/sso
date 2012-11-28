@@ -378,18 +378,23 @@ function shib_login_authmap($uname, $umail_single, $uid, $alreadyloggedin = Fals
     shib_auth_error('Can\'t fetch mail attribute and it is required by the configuration');
     return;
   }
+  db_set_active('community'); // we call our custom db
   //First, we want to get the name of the user with the given uid
   $authmap_username = db_select('users', 'c')
                         ->fields('c')
                         ->condition('uid', $uid, '=')
                         ->execute()
                         ->fetchAssoc();
+  watchdog('SHIB', 'load from community users: ' . $authmap_username['name']);
+  db_set_active('default'); // we swich back to the drupal core db
 
   //We load this account to make operations with
-  $account = user_external_load($authmap_username['name']);
+  //$account = user_external_load($authmap_username['name']);
+  $account = user_load_by_name($authmap_username['name']);
+
   if (isset($account->uid)) {
     //We don't login user again, if there is already one logged in (made redirect loops when linking an account)
-    user_external_login_register($account->name, 'shib_auth');
+    user_external_login_register($account->name, 'unused');
     if ($user->uid) {
       //set auth variable to shib_auth
       $_SESSION['shib_auth_authentication'] = 'shib_auth';
@@ -451,7 +456,7 @@ function shib_auth_check_identifier($uname) {
 } //function shib_auth_check_identifier
 
 /**
- * Load an authmap user object from shib_authmap
+ * Load an authmap user object from shib_authmap in COMMUNITY database.
  *
  * @return
  *  The authmap item in array if found, NULL otherwise.
@@ -464,8 +469,8 @@ function shib_auth_load_from_authmap($uname) {
               ->condition('targeted_id', $uname, '=')
               ->execute()
               ->fetchAssoc();
-  dpm($query);
-  watchdog('SHIB', 'load from authmap: ' . $query['uid']);
+
+  watchdog('SHIB', 'load from community authmap: ' . $query['uid']);
   db_set_active('default'); // we swich back to the drupal core db
 
   return $query;
@@ -751,7 +756,7 @@ function shib_auth_init() {
     return;
   }
   //check if the old user exists in the shibboleth authmap
-  // TODO: need to query community shib_authmap table in this function
+  // NOTE: THIS USES THE COMMUNITY DB
   $existing_authmap = shib_auth_load_from_authmap($uname);
 
   //Check whether CONSENT VERSION is CHANGED, if so, users have to accept it again
