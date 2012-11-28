@@ -1473,11 +1473,10 @@ function shib_auth_internal_login_register($name, $mail) {
     }
     // log this event
     watchdog('user', 'New user (already existed on Community): %name (%email).', array('%name' => $name, '%email' => $mail), WATCHDOG_NOTICE, l(t('edit'), 'user/' . $account->uid . '/edit'));
-
-    // log user in
-    $form_state['uid'] = $account->uid;
-    user_login_submit(array(), $form_state);
-
   }
+
+  // log user in
+  $form_state['uid'] = $account->uid;
+  user_login_submit(array(), $form_state);
 
 } //function shib_auth_internal_login_register
