@@ -390,9 +390,11 @@ function shib_login_authmap($uname, $umail_single, $uid, $alreadyloggedin = Fals
 
   //We load this account to make operations with
   //$account = user_external_load($authmap_username['name']);
+  db_set_active('community');
   $account = user_load_by_name($authmap_username['name']);
+  db_set_active('default');
 
-  //if (isset($account->uid)) {
+  if (isset($account->uid)) {
     //We don't login user again, if there is already one logged in (made redirect loops when linking an account)
     shib_auth_internal_login_register($account->name, $account->mail);
     if ($user->uid) {
@@ -430,11 +432,11 @@ function shib_login_authmap($uname, $umail_single, $uid, $alreadyloggedin = Fals
       watchdog('shib DEBUG', 'global user ID not set');
       shib_auth_error('Couldn\'t login user: ' . $authmap_username['name']);
     }
-  //}
-  /*else {
-    watchdog('shib DEBUG', 'can\'t load local account by external username');
+  }
+  else {
+    watchdog('shib DEBUG', 'can\'t load external account by external username');
     shib_auth_error('Couldn\'t login user: ' . $authmap_username['name']);
-  }*/
+  }
   //redirect user to a predefined page, or a page, she wanted to see before clicking on login
   shib_auth_submit_redirect();
 } //function shib_login_authmap
