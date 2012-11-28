@@ -394,7 +394,7 @@ function shib_login_authmap($uname, $umail_single, $uid, $alreadyloggedin = Fals
 
   if (isset($account->uid)) {
     //We don't login user again, if there is already one logged in (made redirect loops when linking an account)
-    user_external_login_register($account->name, 'unused');
+    shib_auth_internal_login_register($account->name, $account->mail);
     if ($user->uid) {
       //set auth variable to shib_auth
       $_SESSION['shib_auth_authentication'] = 'shib_auth';
@@ -1437,3 +1437,41 @@ function shib_auth_get_rolename($rid) {
   return NULL;
 } //function shib_auth_get_rolename()
 
+/**
+ * Complement of user_external_login_register at
+ * http://api.drupal.org/api/drupal/modules%21user%21user.module/function/user_external_login_register/7
+ * so that user can be created during registration, if registering for a Drupal account rather than via Shib.
+ *
+ * @param $name
+ * @return mixed
+ */
+function shib_auth_internal_login_register($name, $mail) {
+
+  $uid = db_query('SELECT COUNT(*) FROM users WHERE name = :name', array(':name' => $name))->fetchField();
+  if ($uid == 0) {
+
+    // Register this new user.
+    $userinfo = array(
+      'name'   => $name,
+      'pass'   => user_password(),
+      'init'   => $name,
+      'status' => 1,
+      'access' => REQUEST_TIME,
+      'mail'   => $mail,
+    );
+    $account = user_save(drupal_anonymous_user(), $userinfo);
+    // Terminate if an error occurred during user_save().
+    if (!$account) {
+      drupal_set_message(t("Error saving user account."), 'error');
+      return;
+    }
+    // log this event
+    watchdog('user', 'New user (already existed on Community): %name (%email).', array('%name' => $name, '%email' => $mail), WATCHDOG_NOTICE, l(t('edit'), 'user/' . $account->uid . '/edit'));
+
+    // log user in
+    $form_state['uid'] = $account->uid;
+    user_login_submit(array(), $form_state);
+
+  }
+
+} //function shib_auth_internal_login_register
