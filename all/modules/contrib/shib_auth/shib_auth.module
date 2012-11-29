@@ -670,6 +670,7 @@ function shib_auth_role_assignment() {
  * In this case, the account will be created with this e-mail address.
  */
 function shib_auth_init() {
+  watchdog('***DEBUG***', 'shib_auth_init()');
   global $user;
 
   //add theme css
@@ -692,6 +693,9 @@ function shib_auth_init() {
 
   // Storing whether the user was already logged in or not
   $alreadyloggedin = (user_is_anonymous()) ? False : True;
+  if ($alreadyloggedin) {
+    watchdog('***DEBUG***', 'shib_auth_init() - already logged in = TRUE');
+  }
 
   /* CHECKING THE SESSION
    Here shib_auth_session_check() will destroy the session if
