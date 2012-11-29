@@ -1426,6 +1426,9 @@ function shib_auth_internal_login_register($uid) {
   db_set_active('default'); // we switch back to the drupal core db
   dpm($account);
 
+  $name = _shib_auth_get_user_from_uid($uid);
+  watchdog('***SOAP DEBUG***', 'name retrieved = ' . $name);
+
   $edit = array(
     'name' => $account->name,
     'pass' => $account->pass,
@@ -1473,3 +1476,78 @@ function shib_auth_internal_login_register($uid) {
   user_login_submit(array(), $form_state);
 
 } //function shib_auth_internal_login_register
+
+
+function _shib_auth_get_uid_from_persistent_id($persistent_id = NULL) {
+
+  if (empty($persistent_id)) {
+    return NULL;
+  }
+
+  try {
+    $params = new stdClass;
+    // this is the API Key as provided by Janet
+    $params->key = "GL36P-UAYSJ-C2Q0D-15I7T-R4FBO";
+    // this is optional, a descriptive name for internal reporting
+    // (internal reporting is not currently implemented)
+    $params->name = "SHIB_AUTH";
+
+    // create the client - this URL needs to match the site you are calling from
+    $client = new SoapClient('https://community.ja.net/api/soap?wsdl');
+    // add the authentication headers - keep as below
+    $headers = array(new SoapHeader('https://community.ja.net', 'AuthHeader', $params));
+    $client->__setSoapHeaders($headers);
+
+    // we can now run our call. See the WSDL for function definitions
+    // This example roughly translates to user_load(), with
+    // the param being the UID, same as the same as core's
+    // user_load()
+    $user_97 = $client->__soapCall('user_soap_retrieve', array(97));
+
+    $functions = $client->__getFunctions();
+
+    return $user_97->name;
+
+  } catch (SoapFault $sf) {
+    // process $sf error
+    return NULL;
+  }
+
+}
+
+function _shib_auth_get_user_from_uid($uid = NULL) {
+
+  if (empty($uid)) {
+    return NULL;
+  }
+
+  try {
+    $params = new stdClass;
+    // this is the API Key as provided by Janet
+    $params->key = "GL36P-UAYSJ-C2Q0D-15I7T-R4FBO";
+    // this is optional, a descriptive name for internal reporting
+    // (internal reporting is not currently implemented)
+    $params->name = "SHIB_AUTH";
+
+    // create the client - this URL needs to match the site you are calling from
+    $client = new SoapClient('https://community.ja.net/api/soap?wsdl');
+    // add the authentication headers - keep as below
+    $headers = array(new SoapHeader('https://community.ja.net', 'AuthHeader', $params));
+    $client->__setSoapHeaders($headers);
+
+    // we can now run our call. See the WSDL for function definitions
+    // This example roughly translates to user_load(), with
+    // the param being the UID, same as the same as core's
+    // user_load()
+    $user_97 = $client->__soapCall('user_soap_retrieve', array($uid));
+
+    $functions = $client->__getFunctions();
+
+    return $user_97->name;
+
+  } catch (SoapFault $sf) {
+    // process $sf error
+    return NULL;
+  }
+
+}
