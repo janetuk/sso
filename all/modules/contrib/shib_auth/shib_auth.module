@@ -1456,6 +1456,7 @@ function shib_auth_get_rolename($rid) {
 function shib_auth_internal_login_register($name, $mail) {
 
   $account = user_load_by_name($name);
+  dpm($account);
 
   // if the account does not yet exist
   if (!$account) {
