@@ -729,7 +729,6 @@ function shib_auth_init() {
   //check if the old user exists in the shibboleth authmap
   // NOTE: THIS USES THE COMMUNITY DB
   $existing_authmap = _shib_auth_get_shib_authmap_from_persistent_id($uname);
-  watchdog('***DEBUG***', 'existing authmap uid = ' . $existing_authmap->uid);
 
   //Check whether CONSENT VERSION is CHANGED, if so, users have to accept it again
   if (isset($_POST['form_id']) && $_POST['form_id'] == 'shib_auth_custom_data' &&
@@ -1421,7 +1420,6 @@ function shib_auth_internal_login_register($uid) {
 
   $account = _shib_auth_get_user_from_uid($uid);
   //dpm($account);
-  watchdog('***SOAP DEBUG***', 'name retrieved = ' . $account->name);
 
   $edit = array(
     'name' => $account->name,
@@ -1450,16 +1448,12 @@ function shib_auth_internal_login_register($uid) {
 
   if (empty($local_account->uid)) {
     // if user doesn't exist, add to database
-    watchdog('***DEBUG***', 'user "' . $account->name . '" does not exist.  Saving new account.');
-
     $new_account = user_save(drupal_anonymous_user(), $edit);
 
     if (!$new_account) {
       watchdog('shib_auth', 'Error saving user account ' . $uid . ' from Community');
       return;
     }
-
-    watchdog('***DEBUG***', 'user "' . $new_account->name . '" has been created.');
 
     $login_uid = $new_account->uid;
   }
@@ -1478,8 +1472,6 @@ function shib_auth_internal_login_register($uid) {
 
 
 function _shib_auth_get_shib_authmap_from_persistent_id($persistent_id = NULL) {
-
-  watchdog('***DEBUG***', '_shib_auth_get_shib_authmap_from_persistent_id = ' . $persistent_id);
 
   if (empty($persistent_id)) {
     return NULL;
@@ -1504,7 +1496,6 @@ function _shib_auth_get_shib_authmap_from_persistent_id($persistent_id = NULL) {
     // the param being the UID, same as the same as core's
     // user_load()
     $authmap = $client->__soapCall('shib_auth_api_soap_retrieve', array('persistent-id' => $persistent_id));
-    watchdog('***DEBUG***', 'loaded authmap uid = ' . $authmap->uid);
 
     return $authmap;
 
