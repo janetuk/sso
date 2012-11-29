@@ -384,7 +384,7 @@ function shib_login_authmap($umail_single, $uid, $alreadyloggedin = False) {
 
   if (!empty($uid)) {
     //We don't login user again, if there is already one logged in (made redirect loops when linking an account)
-    shib_auth_internal_login($uid);
+    shib_auth_internal_login_register($uid);
     // if successful login above
     if ($user->uid) {
       //set auth variable to shib_auth
@@ -1419,14 +1419,28 @@ function shib_auth_get_rolename($rid) {
  * @param $name
  * @return mixed
  */
-function shib_auth_internal_login($uid) {
+function shib_auth_internal_login_register($uid) {
 
   db_set_active('community'); // we call our custom db
   $account = user_load($uid);
-  db_set_active('default'); // we swich back to the drupal core db
+  db_set_active('default'); // we switch back to the drupal core db
+  dpm($account);
+
+  // check if this user exists in the local database
+  /*$local_account = user_load_by_name($account->name);
+  if (empty($local_account->uid)) {
+    // if user doesn't exist, add to database
+    watchdog('***DEBUG***', 'user "' . $account->name . '" does not exist.  Saving new account.');
+
+    $new_account = user_save(drupal_anonymous_user(), $account);
+  }
+  else {
+  // if user does exist, check that we have the latest data
+    watchdog('***DEBUG***', 'user "' . $account->name . '" exists, checking data is up-to-date.');
+  }*/
 
   // log user in
   $form_state['uid'] = $account->uid;
   user_login_submit(array(), $form_state);
 
-} //function shib_auth_internal_login
+} //function shib_auth_internal_login_register
