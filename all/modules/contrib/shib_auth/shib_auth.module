@@ -1530,7 +1530,7 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
     $params->name = "SHIB_AUTH";
 
     // create the client - this URL needs to match the site you are calling from
-    $client = new SoapClient('https://drupal.dev.ja.net/api/soap?wsdl');
+    $client = new SoapClient('https://ssodev.dev.ja.net/api/soap?wsdl');
     // add the authentication headers - keep as below
     $headers = array(new SoapHeader('https://drupal.dev.ja.net', 'AuthHeader', $params));
     $client->__setSoapHeaders($headers);
@@ -1539,14 +1539,14 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
     // This example roughly translates to user_load(), with
     // the param being the UID, same as the same as core's
     // user_load()
-    $user_97 = $client->__soapCall('user_soap_retrieve', array($uid));
+    $user = $client->__soapCall('user_soap_retrieve', array($uid));
 
-    $functions = $client->__getFunctions();
-
-    return $user_97->name;
+    return $user;
 
   } catch (SoapFault $sf) {
     // process $sf error
+    watchdog('shib_auth', 'ERROR: SoapFault code = ' . $sf->faultcode);
+    watchdog('shib_auth', 'ERROR: SoapFault string = ' . $sf->faultstring);
     return NULL;
   }
 
