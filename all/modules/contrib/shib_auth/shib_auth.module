@@ -433,16 +433,16 @@ function shib_auth_check_identifier($uname) {
  * @return
  *  The authmap item in array if found, NULL otherwise.
  */
-/*function shib_auth_load_from_authmap($uname) {
+function shib_auth_load_from_authmap($uname) {
 
-  db_set_active('community'); // we call our custom db
+  //db_set_active('community'); // we call our custom db
   $query = db_select('shib_authmap', 'c')
               ->fields('c')
               ->condition('targeted_id', $uname, '=')
               ->execute()
               ->fetchAssoc();
 
-  db_set_active('default'); // we swich back to the drupal core db
+  //db_set_active('default'); // we swich back to the drupal core db
 
   return $query;
 
@@ -731,7 +731,8 @@ function shib_auth_init() {
   }
   //check if the old user exists in the shibboleth authmap
   // NOTE: THIS USES THE COMMUNITY DB
-  $existing_authmap = _shib_auth_get_shib_authmap_from_persistent_id($uname);
+  //$existing_authmap = _shib_auth_get_shib_authmap_from_persistent_id($uname);
+  $existing_authmap = shib_auth_load_from_authmap($uname);
   dpm($existing_authmap);
   watchdog('***DEBUG***', 'existing authmap uid = ' . $existing_authmap->uid);
 
