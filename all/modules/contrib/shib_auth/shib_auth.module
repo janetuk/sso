@@ -210,6 +210,9 @@ function shib_auth_debug() {
         $debug_message = filter_xss('<b>$user:</b><br /><pre>' . print_r($userinfo, TRUE) . '</pre>', $tags);
         drupal_set_message(t('!msg', array('!msg' => $debug_message)));
       }
+      else {
+        drupal_set_message(t('global UID not set'));
+      }
       // Work around that drupal_set_message() keeps previous messages in $_SESSION
       if (!empty($_SESSION))
         $session_copy = $_SESSION;
@@ -380,14 +383,9 @@ function shib_login_authmap($umail_single, $uid, $alreadyloggedin = False) {
   }
 
   if (!empty($uid)) {
-    dpm($user);
-    watchdog('***DEBUG***', 'about to call shib_auth_internal_login on UID ' . $uid);
-    watchdog('***DEBUG***', 'about to call shib_auth_internal_login, user->uid = ' . $user->uid);
     //We don't login user again, if there is already one logged in (made redirect loops when linking an account)
     shib_auth_internal_login($uid);
-    watchdog('***DEBUG***', 'finished shib_auth_internal_login on UID ' . $uid);
-    watchdog('***DEBUG***', 'finished shib_auth_internal_login, user->uid = ' . $user->uid);
-    dpm($user);
+    // if successful login above
     if ($user->uid) {
       //set auth variable to shib_auth
       $_SESSION['shib_auth_authentication'] = 'shib_auth';
@@ -399,7 +397,7 @@ function shib_login_authmap($umail_single, $uid, $alreadyloggedin = False) {
       }
     }
     else {
-      watchdog('***DEBUG***', 'global user ID not set');
+      watchdog('shib_auth', 'global user ID not set - could not log in UID ' . $uid);
       shib_auth_error('Couldn\'t login user: ' . $uid);
     }
   }
@@ -437,7 +435,6 @@ function shib_auth_check_identifier($uname) {
  */
 function shib_auth_load_from_authmap($uname) {
 
-  watchdog('***DEBUG***', 'switching to COMMUNITY DB');
   db_set_active('community'); // we call our custom db
   $query = db_select('shib_authmap', 'c')
               ->fields('c')
@@ -445,9 +442,7 @@ function shib_auth_load_from_authmap($uname) {
               ->execute()
               ->fetchAssoc();
 
-  watchdog('***DEBUG***', 'load from community authmap: ' . $query['uid']);
   db_set_active('default'); // we swich back to the drupal core db
-  watchdog('***DEBUG***', 'switching back to SSO DB');
 
   return $query;
 
@@ -670,8 +665,10 @@ function shib_auth_role_assignment() {
  * In this case, the account will be created with this e-mail address.
  */
 function shib_auth_init() {
-  watchdog('***DEBUG***', 'shib_auth_init()');
+
   global $user;
+
+  dpm($user);
 
   //add theme css
   drupal_add_css(drupal_get_path('module', 'shib_auth') . '/shib_auth.css');
@@ -693,9 +690,6 @@ function shib_auth_init() {
 
   // Storing whether the user was already logged in or not
   $alreadyloggedin = (user_is_anonymous()) ? False : True;
-  if ($alreadyloggedin) {
-    watchdog('***DEBUG***', 'shib_auth_init() - already logged in = TRUE');
-  }
 
   /* CHECKING THE SESSION
    Here shib_auth_session_check() will destroy the session if
@@ -1427,22 +1421,12 @@ function shib_auth_get_rolename($rid) {
  */
 function shib_auth_internal_login($uid) {
 
-  watchdog('***DEBUG***', 'shib_auth_internal_login');
-  watchdog('***DEBUG***', 'switching to COMMUNITY DB');
   db_set_active('community'); // we call our custom db
   $account = user_load($uid);
   db_set_active('default'); // we swich back to the drupal core db
-  watchdog('***DEBUG***', 'switching back to SSO DB');
-  if ($account == FALSE) {
-    watchdog('***DEBUG***', 'account with UID ' . $uid . ' not loaded');
-  }
-  else {
-    dpm($account);
-  }
 
   // log user in
   $form_state['uid'] = $account->uid;
-  watchdog('***DEBUG***', 'log user ' . $account->uid . ' in');
   user_login_submit(array(), $form_state);
 
 } //function shib_auth_internal_login
