@@ -1455,12 +1455,14 @@ function shib_auth_get_rolename($rid) {
  */
 function shib_auth_internal_login_register($name, $mail) {
 
+  watchdog('***DEBUG***', 'shib_auth_internal_login_register');
   $account = user_load_by_name($name);
   dpm($account);
 
   // if the account does not yet exist
   if (!$account) {
 
+    watchdog('***DEBUG***', '!account');
     // Register this new user.
     $userinfo = array(
       'name'   => $name,
@@ -1482,6 +1484,7 @@ function shib_auth_internal_login_register($name, $mail) {
 
   // log user in
   $form_state['uid'] = $account->uid;
+  watchdog('***DEBUG***', 'log user ' . $account->uid . ' in');
   user_login_submit(array(), $form_state);
 
 } //function shib_auth_internal_login_register
