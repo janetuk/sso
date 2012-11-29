@@ -1428,7 +1428,10 @@ function shib_auth_internal_login_register($uid) {
 
   $edit = array(
     'name' => $account->name,
-    'pass' => $account->pass,
+    // pass is unset in services_remove_user_data() (services.module)
+    //'pass' => $account->pass,
+
+    // mail is unset in services_remove_user_data() (services.module)
     'mail' => $account->mail,
     'theme' => $account->theme,
     'signature' => $account->signature,
@@ -1440,6 +1443,8 @@ function shib_auth_internal_login_register($uid) {
     'timezone' => $account->timezone,
     'language' => $account->language,
     'picture' => $account->picture,
+
+    // init is unset in services_remove_user_data() (services.module)
     'init' => $account->init,
   );
 
@@ -1540,6 +1545,7 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
     // the param being the UID, same as the same as core's
     // user_load()
     $user = $client->__soapCall('user_soap_retrieve', array($uid));
+    dpm($user);
 
     return $user;
 
