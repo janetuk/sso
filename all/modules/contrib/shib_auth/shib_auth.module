@@ -440,7 +440,7 @@ function shib_auth_load_from_authmap($uname) {
               ->fields('c')
               ->condition('targeted_id', $uname, '=')
               ->execute()
-              ->fetchAssoc();
+              ->fetchObject();
 
   db_set_active('default'); // we swich back to the drupal core db
 
