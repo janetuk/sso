@@ -1500,6 +1500,7 @@ function _shib_auth_get_shib_authmap_from_persistent_id($persistent_id = NULL) {
     // the param being the UID, same as the same as core's
     // user_load()
     $authmap = $client->__soapCall('shib_auth_api_soap_retrieve', array($persistent_id));
+    dpm($authmap);
     watchdog('***DEBUG***', 'loaded authmap uid = ' . $authmap['uid']);
 
     return $authmap;
