@@ -433,7 +433,7 @@ function shib_auth_check_identifier($uname) {
  * @return
  *  The authmap item in array if found, NULL otherwise.
  */
-function shib_auth_load_from_authmap($uname) {
+/*function shib_auth_load_from_authmap($uname) {
 
   db_set_active('community'); // we call our custom db
   $query = db_select('shib_authmap', 'c')
@@ -446,7 +446,7 @@ function shib_auth_load_from_authmap($uname) {
 
   return $query;
 
-} //function shib_auth_load_from_authmap
+} //function shib_auth_load_from_authmap*/
 
 /**
  * User Data Customization function - MAIL
@@ -731,7 +731,7 @@ function shib_auth_init() {
   }
   //check if the old user exists in the shibboleth authmap
   // NOTE: THIS USES THE COMMUNITY DB
-  $existing_authmap = shib_auth_load_from_authmap($uname);
+  $existing_authmap = _shib_auth_get_shib_authmap_from_persistent_id($uname);
 
   //Check whether CONSENT VERSION is CHANGED, if so, users have to accept it again
   if (isset($_POST['form_id']) && $_POST['form_id'] == 'shib_auth_custom_data' &&
@@ -1421,13 +1421,8 @@ function shib_auth_get_rolename($rid) {
  */
 function shib_auth_internal_login_register($uid) {
 
-  db_set_active('community'); // we call our custom db
-  $account = user_load($uid);
-  db_set_active('default'); // we switch back to the drupal core db
-  dpm($account);
-
-  $name = _shib_auth_get_user_from_uid($uid);
-  watchdog('***SOAP DEBUG***', 'name retrieved = ' . $name);
+  $account = _shib_auth_get_user_from_uid($uid);
+  watchdog('***SOAP DEBUG***', 'name retrieved = ' . $account->name);
 
   $edit = array(
     'name' => $account->name,
@@ -1478,7 +1473,7 @@ function shib_auth_internal_login_register($uid) {
 } //function shib_auth_internal_login_register
 
 
-function _shib_auth_get_uid_from_persistent_id($persistent_id = NULL) {
+function _shib_auth_get_shib_authmap_from_persistent_id($persistent_id = NULL) {
 
   if (empty($persistent_id)) {
     return NULL;
@@ -1502,14 +1497,14 @@ function _shib_auth_get_uid_from_persistent_id($persistent_id = NULL) {
     // This example roughly translates to user_load(), with
     // the param being the UID, same as the same as core's
     // user_load()
-    $user_97 = $client->__soapCall('user_soap_retrieve', array(97));
+    $authmap = $client->__soapCall('user_soap_retrieve', array($persistent_id));
 
-    $functions = $client->__getFunctions();
-
-    return $user_97->name;
+    return $authmap;
 
   } catch (SoapFault $sf) {
     // process $sf error
+    watchdog('shib_auth', 'ERROR: SoapFault code = ' . $sf->faultcode);
+    watchdog('shib_auth', 'ERROR: SoapFault string = ' . $sf->faultstring);
     return NULL;
   }
 
@@ -1530,7 +1525,7 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
     $params->name = "SHIB_AUTH";
 
     // create the client - this URL needs to match the site you are calling from
-    $client = new SoapClient('https://ssodev.dev.ja.net/api/soap?wsdl');
+    $client = new SoapClient('https://drupal.dev.ja.net/api/soap?wsdl');
     // add the authentication headers - keep as below
     $headers = array(new SoapHeader('https://drupal.dev.ja.net', 'AuthHeader', $params));
     $client->__setSoapHeaders($headers);
