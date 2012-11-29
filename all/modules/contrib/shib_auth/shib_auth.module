@@ -1426,21 +1426,49 @@ function shib_auth_internal_login_register($uid) {
   db_set_active('default'); // we switch back to the drupal core db
   dpm($account);
 
+  $edit = array(
+    'name' => $account->name,
+    'pass' => $account->pass,
+    'mail' => $account->mail,
+    'theme' => $account->theme,
+    'signature' => $account->signature,
+    'signature_format' => $account->signature_format,
+    'created' => $account->created,
+    //'access' => $account->access,
+    //'login' => $account->login,
+    'status' => $account->status,
+    'timezone' => $account->timezone,
+    'language' => $account->language,
+    'picture' => $account->picture,
+    'init' => $account->init,
+  );
+
   // check if this user exists in the local database
-  /*$local_account = user_load_by_name($account->name);
+  $local_account = user_load_by_name($account->name);
   if (empty($local_account->uid)) {
     // if user doesn't exist, add to database
     watchdog('***DEBUG***', 'user "' . $account->name . '" does not exist.  Saving new account.');
 
-    $new_account = user_save(drupal_anonymous_user(), $account);
+    $new_account = user_save(drupal_anonymous_user(), $edit);
+
+    if (!$new_account) {
+      watchdog('shib_auth', 'Error saving user account ' . $uid . ' from Community');
+      return;
+    }
+
+    watchdog('***DEBUG***', 'user "' . $new_account->name . '" has been created.');
+
+    $login_uid = $new_account->uid;
   }
   else {
   // if user does exist, check that we have the latest data
     watchdog('***DEBUG***', 'user "' . $account->name . '" exists, checking data is up-to-date.');
-  }*/
+
+    $login_uid = $local_account->uid;
+  }
 
   // log user in
-  $form_state['uid'] = $account->uid;
+  $form_state['uid'] = $login_uid;
   user_login_submit(array(), $form_state);
 
 } //function shib_auth_internal_login_register
