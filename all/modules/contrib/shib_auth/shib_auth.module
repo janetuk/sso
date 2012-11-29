@@ -1445,6 +1445,7 @@ function shib_auth_internal_login_register($uid) {
 
   // check if this user exists in the local database
   $local_account = user_load_by_name($account->name);
+  dpm($local_account);
   if (empty($local_account->uid)) {
     // if user doesn't exist, add to database
     watchdog('***DEBUG***', 'user "' . $account->name . '" does not exist.  Saving new account.');
