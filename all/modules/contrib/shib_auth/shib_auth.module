@@ -435,14 +435,14 @@ function shib_auth_check_identifier($uname) {
  */
 function shib_auth_load_from_authmap($uname) {
 
-  //db_set_active('community'); // we call our custom db
+  db_set_active('community'); // we call our custom db
   $query = db_select('shib_authmap', 'c')
               ->fields('c')
               ->condition('targeted_id', $uname, '=')
               ->execute()
               ->fetchAssoc();
 
-  //db_set_active('default'); // we swich back to the drupal core db
+  db_set_active('default'); // we swich back to the drupal core db
 
   return $query;
 
