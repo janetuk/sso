@@ -1419,7 +1419,12 @@ function shib_auth_internal_login($uid) {
 
   watchdog('***DEBUG***', 'shib_auth_internal_login');
   $account = user_load($uid);
-  dpm($account);
+  if ($account == FALSE) {
+    watchdog('***DEBUG***', 'account with UID ' . $uid . ' not loaded');
+  }
+  else {
+    dpm($account);
+  }
 
   // log user in
   $form_state['uid'] = $account->uid;
