@@ -1477,6 +1477,8 @@ function shib_auth_internal_login_register($uid) {
 
 function _shib_auth_get_shib_authmap_from_persistent_id($persistent_id = NULL) {
 
+  watchdog('***DEBUG***', '_shib_auth_get_shib_authmap_from_persistent_id = ' . $persistent_id);
+
   if (empty($persistent_id)) {
     return NULL;
   }
