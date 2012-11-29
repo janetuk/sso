@@ -369,73 +369,35 @@ function shib_auth_save_authmap($uname, $custom_uname, $umail_single) {
  * @param string $umail_single
  *  The first e-mail address of the user from the IdP.
  *
- * @param boolen $alreadyloggedin
+ * @param boolean $alreadyloggedin
  *  TRUE if the user has already logged in and FALSE if not.
  */
-function shib_login_authmap($uname, $umail_single, $uid, $alreadyloggedin = False) {
+function shib_login_authmap($umail_single, $uid, $alreadyloggedin = False) {
   global $user;
   if (!shib_auth_config('enable_custom_mail') && !valid_email_address($umail_single)) {
     shib_auth_error('Can\'t fetch mail attribute and it is required by the configuration');
     return;
   }
-  db_set_active('community'); // we call our custom db
-  //First, we want to get the name of the user with the given uid
-  $authmap_username = db_select('users', 'c')
-                        ->fields('c')
-                        ->condition('uid', $uid, '=')
-                        ->execute()
-                        ->fetchAssoc();
-  watchdog('SHIB', 'load from community users: ' . $authmap_username['name']);
-  db_set_active('default'); // we swich back to the drupal core db
 
-  //We load this account to make operations with
-  //$account = user_external_load($authmap_username['name']);
-  db_set_active('community');
-  $account = user_load_by_name($authmap_username['name']);
-  db_set_active('default');
-
-  if (isset($account->uid)) {
+  if (!empty($uid)) {
+    dpm($user);
     //We don't login user again, if there is already one logged in (made redirect loops when linking an account)
-    shib_auth_internal_login_register($account->name, $account->mail);
+    shib_auth_internal_login($uid);
+    dpm($user);
     if ($user->uid) {
       //set auth variable to shib_auth
       $_SESSION['shib_auth_authentication'] = 'shib_auth';
-      //Shibboleth mail address override was enabled in the admin config
-      if (shib_auth_config('enable_custom_mail') == 0) {
-        //check if there isn't any user with this e-mail (whose name is different)
-        $email_for_other_user = db_select('users', 'c')
-                                  ->fields('c')
-                                  ->condition('mail', $umail_single, '=')
-                                  ->condition('uid', $user->uid, '<>')
-                                  ->execute()
-                                  ->fetchObject();
 
-        if ($email_for_other_user) {
-          shib_auth_error('[shib_login_authmap] Error saving user account. E-mail address is already used.');
-        }
-        //if everything is allright, modify the mail address of the user.
-        else {
-          $user = shib_auth_save_mail($user, $umail_single);
-          if (!$user) {
-            // Something really bad happened
-            shib_auth_error('[shib_login_authmap] Fatal error while saving mail address');
-            return;
-          }
-        }
-      }
       //forward user to login url, if set
       if (shib_auth_config('login_url')!='' && !$alreadyloggedin && $_GET['q']!= shib_auth_config('login_url')) {
+        watchdog('***DEBUG***', 'going to login_url');
         drupal_goto(shib_auth_config('login_url'));
       }
     }
     else {
       watchdog('shib DEBUG', 'global user ID not set');
-      shib_auth_error('Couldn\'t login user: ' . $authmap_username['name']);
+      shib_auth_error('Couldn\'t login user: ' . $uid);
     }
-  }
-  else {
-    watchdog('shib DEBUG', 'can\'t load external account by external username');
-    shib_auth_error('Couldn\'t login user: ' . $authmap_username['name']);
   }
   //redirect user to a predefined page, or a page, she wanted to see before clicking on login
   shib_auth_submit_redirect();
@@ -677,7 +639,7 @@ function shib_auth_consent_update($uname, $umail_single, $uid) {
     ->fields(array('consentver' => shib_auth_config('terms_ver')))
     ->condition('targeted_id', $uname)
     ->execute();
-  shib_login_authmap($uname, $umail_single, $uid);
+  shib_login_authmap($umail_single, $uid);
 } //function shib_auth_consent_update
 
 /**
@@ -779,7 +741,7 @@ function shib_auth_init() {
   if ($existing_authmap
       && (!shib_auth_config('terms_accept') || ($existing_authmap['consentver'] == shib_auth_config('terms_ver')))) {
     if (empty($_SESSION['shib_auth_account_linking'])) {
-      shib_login_authmap($uname, $umail_single, $existing_authmap['uid'], $alreadyloggedin);
+      shib_login_authmap($umail_single, $existing_authmap['uid'], $alreadyloggedin);
     }
     else {
       shib_auth_terminate_session('This ID has already been registered, please log in again');
@@ -1453,38 +1415,15 @@ function shib_auth_get_rolename($rid) {
  * @param $name
  * @return mixed
  */
-function shib_auth_internal_login_register($name, $mail) {
+function shib_auth_internal_login($uid) {
 
-  watchdog('***DEBUG***', 'shib_auth_internal_login_register');
-  $account = user_load_by_name($name);
+  watchdog('***DEBUG***', 'shib_auth_internal_login');
+  $account = user_load($uid);
   dpm($account);
-
-  // if the account does not yet exist
-  if (!$account) {
-
-    watchdog('***DEBUG***', '!account');
-    // Register this new user.
-    $userinfo = array(
-      'name'   => $name,
-      'pass'   => user_password(),
-      'init'   => $name,
-      'status' => 1,
-      'access' => REQUEST_TIME,
-      'mail'   => $mail,
-    );
-    $account = user_save(drupal_anonymous_user(), $userinfo);
-    // Terminate if an error occurred during user_save().
-    if (!$account) {
-      drupal_set_message(t("Error saving user account."), 'error');
-      return;
-    }
-    // log this event
-    watchdog('user', 'New user (already existed on Community): %name (%email).', array('%name' => $name, '%email' => $mail), WATCHDOG_NOTICE, l(t('edit'), 'user/' . $account->uid . '/edit'));
-  }
 
   // log user in
   $form_state['uid'] = $account->uid;
   watchdog('***DEBUG***', 'log user ' . $account->uid . ' in');
   user_login_submit(array(), $form_state);
 
-} //function shib_auth_internal_login_register
+} //function shib_auth_internal_login
