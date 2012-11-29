@@ -210,9 +210,6 @@ function shib_auth_debug() {
         $debug_message = filter_xss('<b>$user:</b><br /><pre>' . print_r($userinfo, TRUE) . '</pre>', $tags);
         drupal_set_message(t('!msg', array('!msg' => $debug_message)));
       }
-      else {
-        drupal_set_message(t('global UID not set'));
-      }
       // Work around that drupal_set_message() keeps previous messages in $_SESSION
       if (!empty($_SESSION))
         $session_copy = $_SESSION;
@@ -1423,7 +1420,7 @@ function shib_auth_get_rolename($rid) {
 function shib_auth_internal_login_register($uid) {
 
   $account = _shib_auth_get_user_from_uid($uid);
-  dpm($account);
+  //dpm($account);
   watchdog('***SOAP DEBUG***', 'name retrieved = ' . $account->name);
 
   $edit = array(
@@ -1432,7 +1429,7 @@ function shib_auth_internal_login_register($uid) {
     //'pass' => $account->pass,
 
     // mail is unset in services_remove_user_data() (services.module)
-    'mail' => $account->mail,
+    //'mail' => $account->mail,
     'theme' => $account->theme,
     'signature' => $account->signature,
     'signature_format' => $account->signature_format,
@@ -1445,12 +1442,12 @@ function shib_auth_internal_login_register($uid) {
     'picture' => $account->picture,
 
     // init is unset in services_remove_user_data() (services.module)
-    'init' => $account->init,
+    //'init' => $account->init,
   );
 
   // check if this user exists in the local database
   $local_account = user_load_by_name($account->name);
-  dpm($local_account);
+
   if (empty($local_account->uid)) {
     // if user doesn't exist, add to database
     watchdog('***DEBUG***', 'user "' . $account->name . '" does not exist.  Saving new account.');
@@ -1545,7 +1542,6 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
     // the param being the UID, same as the same as core's
     // user_load()
     $user = $client->__soapCall('user_soap_retrieve', array($uid));
-    dpm($user);
 
     return $user;
 
