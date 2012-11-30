@@ -1419,15 +1419,12 @@ function shib_auth_get_rolename($rid) {
 function shib_auth_internal_login_register($uid) {
 
   $account = _shib_auth_get_user_from_uid($uid);
-  //dpm($account);
+  dpm($account);
 
   $edit = array(
     'name' => $account->name,
-    // pass is unset in services_remove_user_data() (services.module)
-    //'pass' => $account->pass,
-
-    // mail is unset in services_remove_user_data() (services.module)
-    //'mail' => $account->mail,
+    'pass' => $account->pass,
+    'mail' => $account->mail,
     'theme' => $account->theme,
     'signature' => $account->signature,
     'signature_format' => $account->signature_format,
@@ -1438,9 +1435,7 @@ function shib_auth_internal_login_register($uid) {
     'timezone' => $account->timezone,
     'language' => $account->language,
     'picture' => $account->picture,
-
-    // init is unset in services_remove_user_data() (services.module)
-    //'init' => $account->init,
+    'init' => $account->init,
   );
 
   // check if this user exists in the local database
@@ -1532,7 +1527,7 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
     // This example roughly translates to user_load(), with
     // the param being the UID, same as the same as core's
     // user_load()
-    $user = $client->__soapCall('user_soap_retrieve', array($uid));
+    $user = $client->__soapCall('sso_user_api_soap_retrieve', array($uid));
 
     return $user;
 
