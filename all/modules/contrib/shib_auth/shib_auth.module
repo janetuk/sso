@@ -1502,6 +1502,8 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
     // add the authentication headers - keep as below
     $headers = array(new SoapHeader('https://drupal.dev.ja.net', 'AuthHeader', $params));
     $client->__setSoapHeaders($headers);
+    $functions = $client->__getFunctions();
+    dpm($functions);
 
     // we can now run our call. See the WSDL for function definitions
     // This example roughly translates to user_load(), with
