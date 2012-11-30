@@ -425,27 +425,6 @@ function shib_auth_check_identifier($uname) {
 } //function shib_auth_check_identifier
 
 /**
- * Load an authmap user object from shib_authmap in COMMUNITY database.
- *
- * @return
- *  The authmap item in array if found, NULL otherwise.
- */
-/*function shib_auth_load_from_authmap($uname) {
-
-  db_set_active('community'); // we call our custom db
-  $query = db_select('shib_authmap', 'c')
-              ->fields('c')
-              ->condition('targeted_id', $uname, '=')
-              ->execute()
-              ->fetchObject();
-
-  db_set_active('default'); // we swich back to the drupal core db
-
-  return $query;
-
-} //function shib_auth_load_from_authmap*/
-
-/**
  * User Data Customization function - MAIL
  * This function handles the mail customization process
  *
@@ -1443,6 +1422,7 @@ function shib_auth_internal_login_register($uid) {
 
   if (empty($local_account->uid)) {
     // if user doesn't exist, add to database
+    watchdog('***DEBUG***', 'user "' . $account->name . '" does not exist, creating account.');
     $new_account = user_save(drupal_anonymous_user(), $edit);
 
     if (!$new_account) {
