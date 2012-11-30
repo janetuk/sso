@@ -1496,8 +1496,8 @@ function _shib_auth_get_shib_authmap_from_persistent_id($persistent_id = NULL) {
 
   } catch (SoapFault $sf) {
     // process $sf error
-    watchdog('shib_auth', 'ERROR: SoapFault code = ' . $sf->faultcode);
-    watchdog('shib_auth', 'ERROR: SoapFault string = ' . $sf->faultstring);
+    watchdog('shib_auth', '(_shib_auth_get_shib_authmap_from_persistent_id) ERROR: SoapFault code = ' . $sf->faultcode);
+    watchdog('shib_auth', '(_shib_auth_get_shib_authmap_from_persistent_id) ERROR: SoapFault string = ' . $sf->faultstring);
     return NULL;
   }
 
@@ -1533,8 +1533,8 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
 
   } catch (SoapFault $sf) {
     // process $sf error
-    watchdog('shib_auth', 'ERROR: SoapFault code = ' . $sf->faultcode);
-    watchdog('shib_auth', 'ERROR: SoapFault string = ' . $sf->faultstring);
+    watchdog('shib_auth', '(_shib_auth_get_user_from_uid) ERROR: SoapFault code = ' . $sf->faultcode);
+    watchdog('shib_auth', '(_shib_auth_get_user_from_uid) ERROR: SoapFault string = ' . $sf->faultstring);
     return NULL;
   }
 
