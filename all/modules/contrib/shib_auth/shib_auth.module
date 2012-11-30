@@ -1414,7 +1414,7 @@ function shib_auth_internal_login_register($uid) {
     'status' => $account->status,
     'timezone' => $account->timezone,
     'language' => $account->language,
-    'picture' => $account->picture,
+    //'picture' => $account->picture,
     'init' => $account->init,
   );
 
@@ -1423,7 +1423,6 @@ function shib_auth_internal_login_register($uid) {
 
   if (empty($local_account->uid)) {
     // if user doesn't exist, add to database
-    watchdog('***DEBUG***', 'user "' . $account->name . '" does not exist, creating account.');
     $new_account = user_save(drupal_anonymous_user(), $edit);
 
     if (!$new_account) {
