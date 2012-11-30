@@ -1,4 +1,6 @@
 <?php
+
+ini_set("soap.wsdl_cache_enabled", "0"); // disabling WSDL cache
 /**
  * @file
  * Drupal Shibboleth authentication module.
@@ -1509,7 +1511,7 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
     // This example roughly translates to user_load(), with
     // the param being the UID, same as the same as core's
     // user_load()
-    $user = $client->__soapCall('sso_user_api_soap_retrieve', array($uid));
+    $user = $client->__soapCall('sso_user_api_soap_retrieve', array('uid' => $uid));
 
     return $user;
 
