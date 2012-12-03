@@ -109,7 +109,7 @@ function bakery_permission() {
  * Implements hook_user_login().
  */
 function bakery_user_login(&$edit, $account) {
-  //dpm($_COOKIE);
+  bakery_watch('bakery_user_login');
   if (variable_get('bakery_is_master', 0) && isset($account->uid)) {
     $init = _bakery_init_field($account->uid);
     bakery_watch('about to create cookie for account name: ' . $account->name . ', account email = ' . $account->mail . ', init = ' . $init);
