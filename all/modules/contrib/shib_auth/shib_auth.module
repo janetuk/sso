@@ -64,7 +64,7 @@ function shib_auth_config($variable, $list = FALSE) {
     return variable_get("shib_auth_$variable", $var_store[$variable]);
   }
   else {
-    drupal_set_message(t("Function shib_auth_config(%variable) called but %variable doesn't exists.", array('%variable' => $variable)), 'error');
+    drupal_set_message(t("Function shib_auth_config(%variable) called but %variable doesn't exist.", array('%variable' => $variable)), 'error');
     return FALSE;
   }
 } //function shib_auth_config

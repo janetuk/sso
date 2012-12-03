@@ -102,14 +102,14 @@ function shib_auth_admin_general($form, &$form_state) {
   $form['shib_soap']['shib_auth_soap_key'] = array(
     '#type'          => 'textfield',
     '#title'         => t('SOAP Key'),
-    '#default_value' => shib_auth_config('shib_auth_soap_key'),
+    '#default_value' => shib_auth_config('soap_key'),
     '#description'   => t('The pre-created API key.'),
     '#required'      => TRUE,
   );
   $form['shib_soap']['shib_auth_client_site'] = array(
     '#type'          => 'textfield',
     '#title'         => t('SOAP domain'),
-    '#default_value' => shib_auth_config('shib_auth_soap_key'),
+    '#default_value' => shib_auth_config('client_site'),
     '#description'   => t('The full domain of the site where the Services module is configured, e.g. "https://community.ja.net".'),
     '#required'      => TRUE,
   );
