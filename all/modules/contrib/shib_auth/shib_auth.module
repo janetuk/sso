@@ -35,13 +35,13 @@ function shib_auth_config($variable, $list = FALSE) {
       'enable_custom_mail' => FALSE,
       'forceauthn' => FALSE,
       'force_https' => FALSE,
-      'auto_destroy_session' => FALSE,
       'is_passive' => FALSE,
       'terms_accept' => FALSE,
       'debug_url' => '',
       'terms_ver' => '',
       'terms_url' => '/',
       'wayf_uri' => '/DS',
+      'client_site' => '',
       'handler_protocol' => 'https',
       'handler_url' => '/Shibboleth.sso',
       'email_variable' => 'HTTP_SHIB_MAIL',
@@ -51,6 +51,7 @@ function shib_auth_config($variable, $list = FALSE) {
       'link_text' => t('Shibboleth Login'),
       'full_handler_url' => shib_auth_get_handler_base() . variable_get('shib_auth_wayf_uri', '/DS'),
       'full_logout_url' => shib_auth_get_handler_base() . '/Logout',
+      'soap_key' => '',
     );
   }
 
@@ -1454,15 +1455,15 @@ function _shib_auth_get_shib_authmap_from_persistent_id($persistent_id = NULL) {
   try {
     $params = new stdClass;
     // this is the API Key as provided by Janet
-    $params->key = "GL36P-UAYSJ-C2Q0D-15I7T-R4FBO";
+    $params->key = shib_auth_config('shib_auth_soap_key');
     // this is optional, a descriptive name for internal reporting
     // (internal reporting is not currently implemented)
     $params->name = "SHIB_AUTH";
 
     // create the client - this URL needs to match the site you are calling from
-    $client = new SoapClient('https://drupal.dev.ja.net/api/soap?wsdl');
+    $client = new SoapClient(shib_auth_config('shib_auth_client_site') . '/api/soap?wsdl');
     // add the authentication headers - keep as below
-    $headers = array(new SoapHeader('https://drupal.dev.ja.net', 'AuthHeader', $params));
+    $headers = array(new SoapHeader(shib_auth_config('shib_auth_client_site'), 'AuthHeader', $params));
     $client->__setSoapHeaders($headers);
 
     // we can now run our call. See the WSDL for function definitions
@@ -1491,15 +1492,15 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
   try {
     $params = new stdClass;
     // this is the API Key as provided by Janet
-    $params->key = "GL36P-UAYSJ-C2Q0D-15I7T-R4FBO";
+    $params->key = shib_auth_config('shib_auth_soap_key');
     // this is optional, a descriptive name for internal reporting
     // (internal reporting is not currently implemented)
     $params->name = "SHIB_AUTH";
 
     // create the client - this URL needs to match the site you are calling from
-    $client = new SoapClient('https://drupal.dev.ja.net/api/soap?wsdl');
+    $client = new SoapClient(shib_auth_config('shib_auth_client_site') . '/api/soap?wsdl');
     // add the authentication headers - keep as below
-    $headers = array(new SoapHeader('https://drupal.dev.ja.net', 'AuthHeader', $params));
+    $headers = array(new SoapHeader(shib_auth_config('shib_auth_client_site'), 'AuthHeader', $params));
     $client->__setSoapHeaders($headers);
 
     // we can now run our call. See the WSDL for function definitions

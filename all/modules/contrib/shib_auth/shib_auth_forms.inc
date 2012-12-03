@@ -94,10 +94,30 @@ function shib_auth_admin_general($form, &$form_state) {
     '#description'   => t('The text of the link providing account linking shown on the user settings form.'),
   );
 
+  $form['shib_soap'] = array(
+    '#type'          => 'fieldset',
+    '#title'         => 'SOAP options',
+    '#weight'        => -1,
+  );
+  $form['shib_soap']['shib_auth_soap_key'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('SOAP Key'),
+    '#default_value' => shib_auth_config('shib_auth_soap_key'),
+    '#description'   => t('The pre-created API key.'),
+    '#required'      => TRUE,
+  );
+  $form['shib_soap']['shib_auth_client_site'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('SOAP domain'),
+    '#default_value' => shib_auth_config('shib_auth_soap_key'),
+    '#description'   => t('The full domain of the site where the Services module is configured, e.g. "https://community.ja.net".'),
+    '#required'      => TRUE,
+  );
+
   $form['shib_attribute_debug'] = array(
     '#type'          => 'fieldset',
     '#title'         => 'Debugging options',
-    '#weight'        => -1,
+    '#weight'        => -2,
   );
 
   $form['shib_attribute_debug']['shib_auth_debug_state'] = array(
