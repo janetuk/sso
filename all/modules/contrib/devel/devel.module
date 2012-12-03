@@ -1687,8 +1687,6 @@ function dpq($query, $return = FALSE, $name = NULL) {
  *   The unaltered input value.
  */
 function dpm($input, $name = NULL, $type = 'status') {
-  // Make sure that the user module is already loaded.
-  drupal_load('module', 'user');
   if (user_access('access devel information')) {
     $export = kprint_r($input, TRUE, $name);
     drupal_set_message($export, $type);

@@ -109,7 +109,7 @@ function bakery_permission() {
  * Implements hook_user_login().
  */
 function bakery_user_login(&$edit, $account) {
-  dpm($_COOKIE);
+  //dpm($_COOKIE);
   if (variable_get('bakery_is_master', 0) && isset($account->uid)) {
     $init = _bakery_init_field($account->uid);
     bakery_watch('about to create cookie for account name: ' . $account->name . ', account email = ' . $account->mail . ', init = ' . $init);
@@ -690,7 +690,7 @@ function bakery_register_return() {
  * Special Bakery login callback authenticates the user and returns to slave.
  */
 function bakery_login() {
-  dpm($_COOKIE);
+  //dpm($_COOKIE);
   $cookie = bakery_taste_oatmeal_cookie();
 
   if ($cookie) {
@@ -698,7 +698,7 @@ function bakery_login() {
     // Remove the data pass cookie.
     _bakery_eat_cookie('OATMEAL');
     bakery_watch('OATMEAL cookie deleted');
-    dpm($_COOKIE);
+    //dpm($_COOKIE);
 
     // First see if the user_login form validation has any errors for them.
     $name = trim($cookie['data']['name']);
@@ -722,7 +722,7 @@ function bakery_login() {
           // Passed all checks, create identification cookie and log in.
           bakery_watch('user credentials passed all checks, so creating identification cookie now');
           _bakery_bake_chocolatechip_cookie($account->name, $account->mail, url("user/$account->uid/edit", array('absolute' => TRUE)));
-          dpm($_COOKIE);
+          //dpm($_COOKIE);
           global $user;
           $user = $account;
           $edit = array('name' => $user->name);
@@ -751,7 +751,7 @@ function bakery_login() {
     }
     bakery_watch('bake new cookie for validation on slave');
     bakery_bake_oatmeal_cookie($name, $data);
-    dpm($_COOKIE);
+    //dpm($_COOKIE);
     bakery_watch('redirecting to slave login URL');
     drupal_goto($cookie['slave'] . '/bakery/login');
   }
@@ -763,13 +763,13 @@ function bakery_login() {
  */
 function bakery_login_return() {
   bakery_watch('slave login page callback');
-  dpm($_COOKIE);
+  //dpm($_COOKIE);
   $cookie = bakery_taste_oatmeal_cookie();
   if ($cookie) {
     // Valid cookie, now destroy it.
     bakery_watch('about to destroy OATMEAL cookie');
     _bakery_eat_cookie('OATMEAL');
-    dpm($_COOKIE);
+    //dpm($_COOKIE);
 
     if (!empty($cookie['data']['errors'])) {
       $errors = $cookie['data']['errors'];
@@ -1053,7 +1053,7 @@ function _bakery_bake_chocolatechip_cookie($name, $mail, $init) {
     bakery_watch('setting new cookie for identification: name = ' . $type  . ', value = ' . bakery_mix(serialize($cookie), 1));
     setcookie($type, bakery_mix(serialize($cookie), 1), $_SERVER['REQUEST_TIME'] + variable_get('bakery_freshness', '3600'), '/', variable_get('bakery_domain', ''), (empty($cookie_secure) ? FALSE : TRUE));
   }
-  dpm($_COOKIE);
+  //dpm($_COOKIE);
 }
 
 function bakery_taste_oatmeal_cookie() {
