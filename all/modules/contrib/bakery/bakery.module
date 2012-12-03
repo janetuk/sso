@@ -428,7 +428,6 @@ function _bakery_login_submit($form, &$form_state) {
   }
 
   $data = $form_state['values'];
-  dpm($data);
   // Hold on to destination if set.
   if (strpos($form['#action'], 'destination=') !== FALSE) {
     // If an absolute URL is in destination parse_url() will issue a warning
