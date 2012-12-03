@@ -1443,7 +1443,10 @@ function shib_auth_internal_login_register($uid) {
   $form_state['uid'] = $login_uid;
   user_login_submit(array(), $form_state);
 
-  user_module_invoke('login', $form_state, $new_account);
+  // test bakery cookies
+  drupal_load('module', 'bakery');
+  bakery_bake_oatmeal_cookie($new_account->name, $data);
+
 
 } //function shib_auth_internal_login_register
 
