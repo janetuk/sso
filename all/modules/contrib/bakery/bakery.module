@@ -773,7 +773,7 @@ function bakery_login_return() {
 
     if (!empty($cookie['data']['errors'])) {
       $errors = $cookie['data']['errors'];
-      if ($errors['incorrect-credentials']) {
+      if (!empty($errors['incorrect-credentials']) && $errors['incorrect-credentials'] == TRUE) {
         drupal_set_message(t('Sorry, unrecognized username or password.'), 'error');
       }
       elseif ($errors['name']) {
@@ -1050,7 +1050,7 @@ function _bakery_bake_chocolatechip_cookie($name, $mail, $init) {
     if ($cookie_secure) {
       $type .= 'SSL';
     }
-    bakery_watch('setting new cookie for identification: name = ' . $type  . ', value = ' . bakery_mix(serialize($cookie), 1) . ', expire = ' . $_SERVER['REQUEST_TIME'] + variable_get('bakery_freshness', '3600') . ', domain = ' . variable_get('bakery_domain', ''));
+    bakery_watch('setting new cookie for identification: name = ' . $type  . ', value = ' . bakery_mix(serialize($cookie), 1));
     setcookie($type, bakery_mix(serialize($cookie), 1), $_SERVER['REQUEST_TIME'] + variable_get('bakery_freshness', '3600'), '/', variable_get('bakery_domain', ''), (empty($cookie_secure) ? FALSE : TRUE));
   }
   dpm($_COOKIE);
@@ -1109,7 +1109,7 @@ function bakery_bake_oatmeal_cookie($name, $data) {
     if ($cookie_secure) {
       $type .= 'SSL';
     }
-    bakery_watch('setting new cookie for passing info between sites: name = ' . $type  . ', value = ' . bakery_mix(serialize($cookie), 1) . ', expire = ' . $_SERVER['REQUEST_TIME'] + variable_get('bakery_freshness', '3600') . ', domain = ' . variable_get('bakery_domain', ''));
+    bakery_watch('setting new cookie for passing info between sites: name = ' . $type  . ', value = ' . bakery_mix(serialize($cookie), 1));
     setcookie($type, bakery_mix(serialize($cookie), 1), $_SERVER['REQUEST_TIME'] + variable_get('bakery_freshness', '3600'), '/', variable_get('bakery_domain', ''), (empty($cookie_secure) ? FALSE : TRUE));
   }
 }
