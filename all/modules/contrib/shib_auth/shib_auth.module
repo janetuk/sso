@@ -1423,7 +1423,7 @@ function shib_auth_internal_login_register($uid) {
     'language' => $account->language,
     //'picture' => $account->picture,
     'init' => $account->init,
-    'field_data_field_sso_id' => array(
+    'field_sso_id' => array(
       'und' => array(
         array('value' => $sso_id),
       ),
@@ -1450,6 +1450,8 @@ function shib_auth_internal_login_register($uid) {
 
     $login_uid = $new_account->uid;
   }
+
+  dpm($new_account);
 
   // log user in
   $form_state['uid'] = $login_uid;
