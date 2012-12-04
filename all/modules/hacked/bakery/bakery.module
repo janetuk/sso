@@ -756,7 +756,6 @@ function bakery_login() {
 function bakery_login_return() {
   $cookie = bakery_taste_oatmeal_cookie();
   if ($cookie) {
-    dpm($cookie);
     // Valid cookie, now destroy it.
     _bakery_eat_cookie('OATMEAL');
 
