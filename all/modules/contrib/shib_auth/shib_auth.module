@@ -1597,11 +1597,16 @@ function shib_auth_get_uid_from_sso_id($sso_id) {
 function shib_auth_is_user_federated() {
 
   global $user;
+  $return = FALSE;
 
   $uname_key = shib_auth_config('username_variable');
   $persistent_id = !empty($_SERVER[$uname_key]) ? $_SERVER[$uname_key] : NULL;
 
-  $federated = db_query('SELECT COUNT(*) FROM shib_authmap WHERE uid = :uid AND targeted_id = :persistent_id AND active = 1', array(':uid' => $user->uid, ':persistent_id' => $persistent_id))->fetchField();
-  return ($federated == 0 ? FALSE : TRUE);
+  $authmap = _shib_auth_get_shib_authmap_from_persistent_id($persistent_id);
+  if (!empty($authmap) && $authmap->uid == $user->uid) {
+    $return = TRUE;
+  }
+
+  return $return;
 
 }
