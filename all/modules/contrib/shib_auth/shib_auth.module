@@ -1583,3 +1583,25 @@ function shib_auth_get_uid_from_sso_id($sso_id) {
   return $uid;
 
 }
+
+/**
+ * Function to tell if the current user is a Federated user (returns TRUE)
+ * or not (returns FALSE).
+ *
+ * A Federated user is defined as a user which has linked their Drupal account
+ * to their Federated account and the link is active.
+ *
+ * @param $uid
+ * @return bool
+ */
+function shib_auth_is_user_federated() {
+
+  global $user;
+
+  $uname_key = shib_auth_config('username_variable');
+  $persistent_id = !empty($_SERVER[$uname_key]) ? $_SERVER[$uname_key] : NULL;
+
+  $federated = db_query('SELECT COUNT(*) FROM shib_authmap WHERE uid = :uid AND targeted_id = :persistent_id AND active = 1', array(':uid' => $user->uid, ':persistent_id' => $persistent_id))->fetchField();
+  return ($federated == 0 ? FALSE : TRUE);
+
+}
