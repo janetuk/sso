@@ -1440,6 +1440,7 @@ function shib_auth_internal_login_register($uid) {
   else {
     // if user does exist, update so that we have the latest data
     $local_account = user_load($existing_uid);
+    dpm($local_account);
     $new_account = user_save($local_account, $edit);
 
     $login_uid = $new_account->uid;
