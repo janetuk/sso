@@ -1401,6 +1401,8 @@ function shib_auth_internal_login_register($uid) {
 
   $account = _shib_auth_get_user_from_uid($uid);
 
+  dpm($account);
+
   $edit = array(
     'name' => $account->name,
     'pass' => $account->pass,
@@ -1442,15 +1444,6 @@ function shib_auth_internal_login_register($uid) {
   // log user in
   $form_state['uid'] = $login_uid;
   user_login_submit(array(), $form_state);
-
-  // test bakery cookies
-  $data = array(
-    'name' => $new_account->name,
-    'pass' => $new_account->pass,
-  );
-  drupal_load('module', 'bakery');
-  watchdog('***SHIB AUTH BAKERY***', 'about to bakery_bake_oatmeal_cookie');
-  bakery_bake_oatmeal_cookie($new_account->name, $data);
 
 
 } //function shib_auth_internal_login_register
