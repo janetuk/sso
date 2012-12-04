@@ -109,7 +109,8 @@ function bakery_permission() {
  * Implements hook_user_login().
  */
 function bakery_user_login(&$edit, $account) {
-  if (variable_get('bakery_is_master', 0) && isset($account->uid)) {
+
+  if (variable_get('bakery_is_master', 0) && isset($account->uid) && !bakery_session_valid()) {
     $init = _bakery_init_field($account->uid);
     _bakery_bake_chocolatechip_cookie($account->name, $account->mail, $init);
   }
@@ -203,7 +204,10 @@ function bakery_user_view($account, $view_mode, $langcode) {
  * Implements hook_boot().
  */
 function bakery_boot() {
-  _bakery_taste_chocolatechip_cookie();
+  // only use bakery if user is not logged in through Shib
+  if (!bakery_session_valid()) {
+    _bakery_taste_chocolatechip_cookie();
+  }
 }
 
 /**
@@ -306,7 +310,7 @@ function bakery_form_alter(&$form, $form_state, $form_id) {
     case 'user_login_block':
     case 'user_login':
       // Provide login ability on the slave sites.
-      if (!variable_get('bakery_is_master', FALSE)) {
+      if (!variable_get('bakery_is_master', FALSE) && !bakery_session_valid()) {
         // Replace two validators from user module because they log the user in
         // and test if account exists. We want to check if the account exists on
         // the master instead.
@@ -415,6 +419,7 @@ function _bakery_register_submit($form, &$form_state) {
  * Handle login by redirecting to master.
  */
 function _bakery_login_submit($form, &$form_state) {
+  watchdog('***BAKERY***', '_bakery_login_submit');
   // Get rid of all the values we don't explicitly know we want. While this may
   // break some modules it ensures we don't send sensitive data between sites.
   $allowed = array('name', 'pass', 'op');
@@ -824,6 +829,14 @@ function _bakery_validate_cookie($type = 'CHOCOLATECHIP') {
  * Test identification cookie
  */
 function _bakery_taste_chocolatechip_cookie() {
+
+  watchdog('***BAKERY***', '_bakery_taste_chocolatechip_cookie');
+  if (bakery_session_valid()) {
+    watchdog('***BAKERY***', 'is shib session');
+  }
+  else {
+    watchdog('***BAKERY***', 'not shib session');
+  }
   $cookie = _bakery_validate_cookie();
 
   // Continue if this is a valid cookie. That only happens for users who have
@@ -1708,3 +1721,37 @@ function bakery_pull_form_submit($form, &$form_state) {
     $form_state['redirect'] = 'user/' . $result;
   }
 }
+
+/**
+ * Checks whether Shibboleth SP has set the Identity Provider $_SERVER field.
+ * It is always set if there is a Shibboleth SP session.
+ *
+ * @return
+ *  TRUE if there is a valid Shibboleth session and FALSE if not.
+ */
+function bakery_session_valid() {
+
+  if ((bool) bakery_get_idp()) {
+    watchdog('***BAKERY***', 'valid shib sesison');
+  }
+  else {
+    watchdog('***BAKERY***', 'not valid shib session');
+  }
+  return (bool) bakery_get_idp();
+} // function shib_auth_session_valid
+
+/**
+ * Get IdP name
+ *
+ * @return
+ *  IdP name
+ */
+function bakery_get_idp() {
+  if (isset($_SERVER['Shib-Identity-Provider']))
+    return $_SERVER['Shib-Identity-Provider'];
+  elseif (isset($_SERVER['Shib_Identity_Provider']))
+    return $_SERVER['Shib_Identity_Provider'];
+  elseif (isset ($_SERVER['HTTP_SHIB_IDENTITY_PROVIDER']))
+    return $_SERVER['HTTP_SHIB_IDENTITY_PROVIDER'];
+  return '';
+} //function shib_auth_get_idp
