@@ -852,6 +852,14 @@ function _bakery_validate_cookie($type = 'CHOCOLATECHIP') {
  * Test identification cookie
  */
 function _bakery_taste_chocolatechip_cookie() {
+
+  watchdog('***BAKERY***', '_bakery_taste_chocolatechip_cookie');
+  if (bakery_is_shib_session()) {
+    watchdog('***BAKERY***', 'is shib session');
+  }
+  else {
+    watchdog('***BAKERY***', 'not shib session');
+  }
   $cookie = _bakery_validate_cookie();
 
   // Continue if this is a valid cookie. That only happens for users who have
