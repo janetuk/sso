@@ -204,6 +204,7 @@ function bakery_user_view($account, $view_mode, $langcode) {
  * Implements hook_boot().
  */
 function bakery_boot() {
+  drupal_load('module', 'devel');
   // only use bakery if user is not logged in through Shib
   if (!bakery_session_valid()) {
     _bakery_taste_chocolatechip_cookie();
