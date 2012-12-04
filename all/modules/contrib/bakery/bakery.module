@@ -1498,7 +1498,7 @@ function _bakery_user_logout() {
   global $user;
   dpm($user);
 
-  watchdog('user', 'Session closed for %name.', array('%name' => $user->name));
+  watchdog('user (bakery)', 'Session closed for %name.', array('%name' => $user->name));
 
   // Destroy the current session:
   session_destroy();
