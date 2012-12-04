@@ -109,8 +109,7 @@ function bakery_permission() {
  * Implements hook_user_login().
  */
 function bakery_user_login(&$edit, $account) {
-
-  if (variable_get('bakery_is_master', 0) && isset($account->uid) && !bakery_is_shib_session()) {
+  if (variable_get('bakery_is_master', 0) && isset($account->uid)) {
     $init = _bakery_init_field($account->uid);
     _bakery_bake_chocolatechip_cookie($account->name, $account->mail, $init);
   }
@@ -204,33 +203,7 @@ function bakery_user_view($account, $view_mode, $langcode) {
  * Implements hook_boot().
  */
 function bakery_boot() {
-  // only use bakery if user is not logged in through Shib
-  if (!bakery_is_shib_session()) {
-    _bakery_taste_chocolatechip_cookie();
-  }
-}
-
-function bakery_is_shib_session() {
-
-  // If the shib_module is installed and enabled
-  if (module_exists('shib_auth')) {
-    // make sure we have the module loaded
-    drupal_load('module', 'shib_auth');
-    // check if the user is logged in through the federation
-    if (shib_auth_is_user_federated()) {
-      watchdog('***BAKERY***', 'is shib session');
-      return TRUE;
-    }
-    else {
-      watchdog('***BAKERY***', 'shib auth user NOT federated');
-    }
-  }
-  else {
-    watchdog('***BAKERY***', 'shib auth does not exist');
-  }
-  watchdog('***BAKERY***', 'is NOT shib session');
-  return FALSE;
-
+  _bakery_taste_chocolatechip_cookie();
 }
 
 /**
@@ -333,7 +306,7 @@ function bakery_form_alter(&$form, $form_state, $form_id) {
     case 'user_login_block':
     case 'user_login':
       // Provide login ability on the slave sites.
-      if (!variable_get('bakery_is_master', FALSE) && !bakery_is_shib_session()) {
+      if (!variable_get('bakery_is_master', FALSE)) {
         // Replace two validators from user module because they log the user in
         // and test if account exists. We want to check if the account exists on
         // the master instead.
@@ -442,7 +415,6 @@ function _bakery_register_submit($form, &$form_state) {
  * Handle login by redirecting to master.
  */
 function _bakery_login_submit($form, &$form_state) {
-  watchdog('***BAKERY***', '_bakery_login_submit');
   // Get rid of all the values we don't explicitly know we want. While this may
   // break some modules it ensures we don't send sensitive data between sites.
   $allowed = array('name', 'pass', 'op');
@@ -852,14 +824,6 @@ function _bakery_validate_cookie($type = 'CHOCOLATECHIP') {
  * Test identification cookie
  */
 function _bakery_taste_chocolatechip_cookie() {
-
-  watchdog('***BAKERY***', '_bakery_taste_chocolatechip_cookie');
-  if (bakery_is_shib_session()) {
-    watchdog('***BAKERY***', 'is shib session');
-  }
-  else {
-    watchdog('***BAKERY***', 'not shib session');
-  }
   $cookie = _bakery_validate_cookie();
 
   // Continue if this is a valid cookie. That only happens for users who have
