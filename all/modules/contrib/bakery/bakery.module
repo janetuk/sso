@@ -419,7 +419,7 @@ function _bakery_register_submit($form, &$form_state) {
  * Handle login by redirecting to master.
  */
 function _bakery_login_submit($form, &$form_state) {
-  watchdog('***BAKERY***', '_bakery_login_submit');
+
   // Get rid of all the values we don't explicitly know we want. While this may
   // break some modules it ensures we don't send sensitive data between sites.
   $allowed = array('name', 'pass', 'op');
@@ -830,173 +830,168 @@ function _bakery_validate_cookie($type = 'CHOCOLATECHIP') {
  */
 function _bakery_taste_chocolatechip_cookie() {
 
-  watchdog('***BAKERY***', '_bakery_taste_chocolatechip_cookie');
-  if (bakery_session_valid()) {
-    watchdog('***BAKERY***', 'is shib session');
-  }
-  else {
-    watchdog('***BAKERY***', 'not shib session');
-  }
-  $cookie = _bakery_validate_cookie();
+  // only continue if not valid shib session
+  if (!bakery_session_valid()) {
+    $cookie = _bakery_validate_cookie();
 
-  // Continue if this is a valid cookie. That only happens for users who have
-  // a current valid session on the master site.
-  if ($cookie) {
-    $destroy_cookie = FALSE;
-    global $user;
+    // Continue if this is a valid cookie. That only happens for users who have
+    // a current valid session on the master site.
+    if ($cookie) {
+      $destroy_cookie = FALSE;
+      global $user;
 
-    // Detect SSO cookie mismatch if there is already a valid session for user.
-    if ($user->uid && $cookie['name'] !== $user->name) {
-      // The SSO cookie doesn't match the existing session so force a logout.
-      drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-      _bakery_user_logout();
-    }
-
-    // Bake a fresh cookie. Yum.
-    _bakery_bake_chocolatechip_cookie($cookie['name'], $cookie['mail'], $cookie['init']);
-
-    if (!$user->uid) {
-      // Since this might happen in hook_boot we need to bootstrap first.
-      // Note that this only runs if they have a valid session on the master
-      // and do not have one on the slave so it only creates the extra load of
-      // a bootstrap on one pageview per session on the site which is not much.
-      drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-      // User is anonymous. If they do not have an account we'll create one by
-      // requesting their information from the master site. If they do have an
-      // account we may need to correct some disparant information.
-      $account = user_load_multiple(array(), array('name' => $cookie['name'], 'mail' => $cookie['mail']));
-      $account = reset($account);
-
-      // Fix out of sync users with valid init.
-      if (!$account && !variable_get('bakery_is_master', 0) && $cookie['master']) {
-        $count = db_select('users', 'u')->fields('u', array('uid'))
-          ->condition('init', $cookie['init'])
-          ->countQuery()->execute()->fetchField();
-        if ($count > 1) {
-          // Uh oh.
-          watchdog('bakery', 'Account uniqueness problem: Multiple users found with init %init.', array('%init' => $cookie['init']), 'error');
-          drupal_set_message(t('Account uniqueness problem detected. <a href="@contact">Please contact the site administrator.</a>', array('@contact' => variable_get('bakery_master', 'http://drupal.org/') .'contact')), 'error');
-        }
-        if ($count == 1) {
-          $account = user_load_multiple(array(), array('init' => $cookie['init']));
-          if (is_array($account)) {
-            $account = reset($account);
-          }
-          if ($account) {
-            watchdog('bakery', 'Fixing out of sync uid %uid. Changed name %name_old to %name_new, mail %mail_old to %mail_new.', array('%uid' => $account->uid, '%name_old' => $account->name, '%name_new' => $cookie['name'], '%mail_old' => $account->mail, '%mail_new' => $cookie['mail']));
-            user_save($account, array('name' => $cookie['name'], 'mail' => $cookie['mail']));
-            $account = user_load_multiple(array(), array('name' => $cookie['name'], 'mail' => $cookie['mail']));
-            $account = reset($account);
-          }
-        }
+      // Detect SSO cookie mismatch if there is already a valid session for user.
+      if ($user->uid && $cookie['name'] !== $user->name) {
+        // The SSO cookie doesn't match the existing session so force a logout.
+        drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+        _bakery_user_logout();
       }
 
-      // Create the account if it doesn't exist.
-      if (!$account && !variable_get('bakery_is_master', 0) && $cookie['master']) {
-        $checks = TRUE;
-        $mail_count = db_select('users', 'u')->fields('u', array('uid'))
-          ->condition('uid', $user->uid, '!=')
-          ->condition('mail', '', '!=')
-          ->where('LOWER(mail) = LOWER(:mail)', array(':mail' => $cookie['mail']))
-          ->countQuery()->execute()->fetchField();
-        if ($mail_count > 0) {
-          $checks = FALSE;
-        }
-        $name_count = db_select('users', 'u')->fields('u', array('uid'))
-          ->condition('uid', $user->uid, '!=')
-          ->where('LOWER(name) = LOWER(:name)', array(':name' => $cookie['name']))
-          ->countQuery()->execute()->fetchField();
-        if ($name_count > 0) {
-          $checks = FALSE;
-        }
-        $init_count = db_select('users', 'u')->fields('u', array('uid'))
-          ->condition('uid', $user->uid, '!=')
-          ->condition('init', $cookie['init'], '=')
-          ->where('LOWER(name) = LOWER(:name)', array(':name' => $cookie['name']))
-          ->countQuery()->execute()->fetchField();
-        if ($init_count > 0) {
-          $checks = FALSE;
+      // Bake a fresh cookie. Yum.
+      _bakery_bake_chocolatechip_cookie($cookie['name'], $cookie['mail'], $cookie['init']);
+
+      if (!$user->uid) {
+        // Since this might happen in hook_boot we need to bootstrap first.
+        // Note that this only runs if they have a valid session on the master
+        // and do not have one on the slave so it only creates the extra load of
+        // a bootstrap on one pageview per session on the site which is not much.
+        drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+        // User is anonymous. If they do not have an account we'll create one by
+        // requesting their information from the master site. If they do have an
+        // account we may need to correct some disparant information.
+        $account = user_load_multiple(array(), array('name' => $cookie['name'], 'mail' => $cookie['mail']));
+        $account = reset($account);
+
+        // Fix out of sync users with valid init.
+        if (!$account && !variable_get('bakery_is_master', 0) && $cookie['master']) {
+          $count = db_select('users', 'u')->fields('u', array('uid'))
+            ->condition('init', $cookie['init'])
+            ->countQuery()->execute()->fetchField();
+          if ($count > 1) {
+            // Uh oh.
+            watchdog('bakery', 'Account uniqueness problem: Multiple users found with init %init.', array('%init' => $cookie['init']), 'error');
+            drupal_set_message(t('Account uniqueness problem detected. <a href="@contact">Please contact the site administrator.</a>', array('@contact' => variable_get('bakery_master', 'http://drupal.org/') .'contact')), 'error');
+          }
+          if ($count == 1) {
+            $account = user_load_multiple(array(), array('init' => $cookie['init']));
+            if (is_array($account)) {
+              $account = reset($account);
+            }
+            if ($account) {
+              watchdog('bakery', 'Fixing out of sync uid %uid. Changed name %name_old to %name_new, mail %mail_old to %mail_new.', array('%uid' => $account->uid, '%name_old' => $account->name, '%name_new' => $cookie['name'], '%mail_old' => $account->mail, '%mail_new' => $cookie['mail']));
+              user_save($account, array('name' => $cookie['name'], 'mail' => $cookie['mail']));
+              $account = user_load_multiple(array(), array('name' => $cookie['name'], 'mail' => $cookie['mail']));
+              $account = reset($account);
+            }
+          }
         }
 
-        if ($checks) {
-          // Request information from master to keep data in sync.
-          $uid = bakery_request_account($cookie['name']);
-          // In case the account creation failed we want to make sure the user
-          // gets their bad cookie destroyed by not returning too early.
-          if ($uid) {
-            $account = user_load($uid);
+        // Create the account if it doesn't exist.
+        if (!$account && !variable_get('bakery_is_master', 0) && $cookie['master']) {
+          $checks = TRUE;
+          $mail_count = db_select('users', 'u')->fields('u', array('uid'))
+            ->condition('uid', $user->uid, '!=')
+            ->condition('mail', '', '!=')
+            ->where('LOWER(mail) = LOWER(:mail)', array(':mail' => $cookie['mail']))
+            ->countQuery()->execute()->fetchField();
+          if ($mail_count > 0) {
+            $checks = FALSE;
+          }
+          $name_count = db_select('users', 'u')->fields('u', array('uid'))
+            ->condition('uid', $user->uid, '!=')
+            ->where('LOWER(name) = LOWER(:name)', array(':name' => $cookie['name']))
+            ->countQuery()->execute()->fetchField();
+          if ($name_count > 0) {
+            $checks = FALSE;
+          }
+          $init_count = db_select('users', 'u')->fields('u', array('uid'))
+            ->condition('uid', $user->uid, '!=')
+            ->condition('init', $cookie['init'], '=')
+            ->where('LOWER(name) = LOWER(:name)', array(':name' => $cookie['name']))
+            ->countQuery()->execute()->fetchField();
+          if ($init_count > 0) {
+            $checks = FALSE;
+          }
+
+          if ($checks) {
+            // Request information from master to keep data in sync.
+            $uid = bakery_request_account($cookie['name']);
+            // In case the account creation failed we want to make sure the user
+            // gets their bad cookie destroyed by not returning too early.
+            if ($uid) {
+              $account = user_load($uid);
+            }
+            else {
+              $destroy_cookie = TRUE;
+            }
+          }
+          else {
+            drupal_set_message(t('Your user account on %site appears to have problems. Would you like to try to <a href="@url">repair it yourself</a>?', array('%site' => variable_get('site_name', 'Drupal'), '@url' => url('bakery/repair'))));
+            drupal_set_message(filter_xss_admin(variable_get('bakery_help_text', 'Otherwise you can contact the site administrators.')));
+            $_SESSION['BAKERY_CRUMBLED'] = TRUE;
+          }
+
+        }
+
+        if ($account && $cookie['master'] && $account->uid && !variable_get('bakery_is_master', 0) && $account->init != $cookie['init']) {
+          // User existed previously but init is wrong. Fix it to ensure account
+          // remains in sync.
+
+          // Make sure that there aren't any OTHER accounts with this init already.
+          $count = db_select('users', 'u')->fields('u', array('uid'))->condition('init', $cookie['init'], '=')
+            ->countQuery()->execute()->fetchField();
+          if ($count == 0) {
+            db_update('users')->fields(array('init' => $cookie['init']))
+              ->condition('uid', $account->uid)
+              ->execute();
+            watchdog('bakery', 'uid %uid out of sync. Changed init field from %oldinit to %newinit', array('%oldinit' => $account->init, '%newinit' => $cookie['init'], '%uid' => $account->uid));
+          }
+          else {
+            // Username and email matched, but init belonged to a DIFFERENT account.
+            // Something got seriously tangled up.
+            watchdog('bakery', 'Accounts mixed up! Username %user and init %init disagree with each other!', array('%user' => $account->name, '%init' => $cookie['init']), 'critical');
+          }
+        }
+
+        if ($account && $user->uid == 0) {
+          // If the login attempt fails we need to destroy the cookie to prevent
+          // infinite redirects (with infinite failed login messages).
+          $login = bakery_user_external_login($account);
+          if ($login) {
+            // If an anonymous user has just been logged in, trigger a 'refresh'
+            // of the current page, ensuring that drupal_goto() does not override
+            // the current page with the destination query.
+            $query = drupal_get_query_parameters();
+            unset($_GET['destination']);
+            drupal_goto(current_path(), array('query' => $query));
           }
           else {
             $destroy_cookie = TRUE;
           }
         }
-        else {
-          drupal_set_message(t('Your user account on %site appears to have problems. Would you like to try to <a href="@url">repair it yourself</a>?', array('%site' => variable_get('site_name', 'Drupal'), '@url' => url('bakery/repair'))));
-          drupal_set_message(filter_xss_admin(variable_get('bakery_help_text', 'Otherwise you can contact the site administrators.')));
-          $_SESSION['BAKERY_CRUMBLED'] = TRUE;
-        }
-
       }
-
-      if ($account && $cookie['master'] && $account->uid && !variable_get('bakery_is_master', 0) && $account->init != $cookie['init']) {
-        // User existed previously but init is wrong. Fix it to ensure account
-        // remains in sync.
-
-        // Make sure that there aren't any OTHER accounts with this init already.
-        $count = db_select('users', 'u')->fields('u', array('uid'))->condition('init', $cookie['init'], '=')
-          ->countQuery()->execute()->fetchField();
-        if ($count == 0) {
-          db_update('users')->fields(array('init' => $cookie['init']))
-            ->condition('uid', $account->uid)
-            ->execute();
-          watchdog('bakery', 'uid %uid out of sync. Changed init field from %oldinit to %newinit', array('%oldinit' => $account->init, '%newinit' => $cookie['init'], '%uid' => $account->uid));
-        }
-        else {
-          // Username and email matched, but init belonged to a DIFFERENT account.
-          // Something got seriously tangled up.
-          watchdog('bakery', 'Accounts mixed up! Username %user and init %init disagree with each other!', array('%user' => $account->name, '%init' => $cookie['init']), 'critical');
-        }
-      }
-
-      if ($account && $user->uid == 0) {
-        // If the login attempt fails we need to destroy the cookie to prevent
-        // infinite redirects (with infinite failed login messages).
-        $login = bakery_user_external_login($account);
-        if ($login) {
-          // If an anonymous user has just been logged in, trigger a 'refresh'
-          // of the current page, ensuring that drupal_goto() does not override
-          // the current page with the destination query.
-          $query = drupal_get_query_parameters();
-          unset($_GET['destination']);
-          drupal_goto(current_path(), array('query' => $query));
-        }
-        else {
-          $destroy_cookie = TRUE;
-        }
+      if ($destroy_cookie !== TRUE) {
+        return TRUE;
       }
     }
-    if ($destroy_cookie !== TRUE) {
-      return TRUE;
+
+    // Eat the bad cookie. Burp.
+    if ($cookie === FALSE) {
+      _bakery_eat_cookie();
     }
-  }
 
-  // Eat the bad cookie. Burp.
-  if ($cookie === FALSE) {
-    _bakery_eat_cookie();
-  }
-
-  // No cookie or invalid cookie
-  if (!$cookie) {
-    global $user;
-    // Log out users that have lost their SSO cookie, with the exception of
-    // UID 1 and any applied roles with permission to bypass.
-    if ($user->uid > 1) {
-      watchdog('***BAKERY***', 'user id = ' . $user->uid);
-      // This runs for logged in users. Those folks are going to get a full bootstrap anyway so this isn't a problem.
-      drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-      if (!user_access('bypass bakery')) {
-        watchdog('bakery', 'Logging out the user with the bad cookie.');
-        _bakery_user_logout();
+    // No cookie or invalid cookie
+    if (!$cookie) {
+      global $user;
+      // Log out users that have lost their SSO cookie, with the exception of
+      // UID 1 and any applied roles with permission to bypass.
+      if ($user->uid > 1) {
+        // This runs for logged in users. Those folks are going to get a full bootstrap anyway so this isn't a problem.
+        drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+        if (!user_access('bypass bakery')) {
+          watchdog('bakery', 'Logging out the user with the bad cookie.');
+          _bakery_user_logout();
+        }
       }
     }
   }
@@ -1735,13 +1730,6 @@ function bakery_pull_form_submit($form, &$form_state) {
  *  TRUE if there is a valid Shibboleth session and FALSE if not.
  */
 function bakery_session_valid() {
-
-  if ((bool) bakery_get_idp()) {
-    watchdog('***BAKERY***', 'valid shib sesison');
-  }
-  else {
-    watchdog('***BAKERY***', 'not valid shib session');
-  }
   return (bool) bakery_get_idp();
 } // function shib_auth_session_valid
 
