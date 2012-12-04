@@ -109,10 +109,8 @@ function bakery_permission() {
  * Implements hook_user_login().
  */
 function bakery_user_login(&$edit, $account) {
-  bakery_watch('bakery_user_login');
   if (variable_get('bakery_is_master', 0) && isset($account->uid)) {
     $init = _bakery_init_field($account->uid);
-    bakery_watch('about to create cookie for account name: ' . $account->name . ', account email = ' . $account->mail . ', init = ' . $init);
     _bakery_bake_chocolatechip_cookie($account->name, $account->mail, $init);
   }
 }
@@ -417,7 +415,6 @@ function _bakery_register_submit($form, &$form_state) {
  * Handle login by redirecting to master.
  */
 function _bakery_login_submit($form, &$form_state) {
-  bakery_watch('_bakery_login_submit');
   // Get rid of all the values we don't explicitly know we want. While this may
   // break some modules it ensures we don't send sensitive data between sites.
   $allowed = array('name', 'pass', 'op');
@@ -634,7 +631,6 @@ function bakery_register() {
  * Redirects to the homepage on success or to the register page if there was a problem.
  */
 function bakery_register_return() {
-  bakery_watch('validating oatmeal cookie');
   $cookie = bakery_taste_oatmeal_cookie();
 
   if ($cookie) {
@@ -690,15 +686,12 @@ function bakery_register_return() {
  * Special Bakery login callback authenticates the user and returns to slave.
  */
 function bakery_login() {
-  //dpm($_COOKIE);
   $cookie = bakery_taste_oatmeal_cookie();
 
   if ($cookie) {
     $errors = array();
     // Remove the data pass cookie.
     _bakery_eat_cookie('OATMEAL');
-    bakery_watch('OATMEAL cookie deleted');
-    //dpm($_COOKIE);
 
     // First see if the user_login form validation has any errors for them.
     $name = trim($cookie['data']['name']);
@@ -706,7 +699,6 @@ function bakery_login() {
     // Execute the login form which checks username, password, status and flood.
     $form_state = array();
     $form_state['values'] = $cookie['data'];
-    bakery_watch('about to log user in');
     drupal_form_submit('user_login', $form_state);
     $errors = form_get_errors();
 
@@ -720,9 +712,7 @@ function bakery_login() {
         }
         else {
           // Passed all checks, create identification cookie and log in.
-          bakery_watch('user credentials passed all checks, so creating identification cookie now');
           _bakery_bake_chocolatechip_cookie($account->name, $account->mail, url("user/$account->uid/edit", array('absolute' => TRUE)));
-          //dpm($_COOKIE);
           global $user;
           $user = $account;
           $edit = array('name' => $user->name);
@@ -749,10 +739,7 @@ function bakery_login() {
     if (isset($cookie['data']['destination'])) {
       $data['destination'] = $cookie['data']['destination'];
     }
-    bakery_watch('bake new cookie for validation on slave');
     bakery_bake_oatmeal_cookie($name, $data);
-    //dpm($_COOKIE);
-    bakery_watch('redirecting to slave login URL');
     drupal_goto($cookie['slave'] . '/bakery/login');
   }
   drupal_access_denied();
@@ -762,18 +749,14 @@ function bakery_login() {
  * Custom return for errors during slave login process.
  */
 function bakery_login_return() {
-  bakery_watch('slave login page callback');
-  //dpm($_COOKIE);
   $cookie = bakery_taste_oatmeal_cookie();
   if ($cookie) {
     // Valid cookie, now destroy it.
-    bakery_watch('about to destroy OATMEAL cookie');
     _bakery_eat_cookie('OATMEAL');
-    //dpm($_COOKIE);
 
     if (!empty($cookie['data']['errors'])) {
       $errors = $cookie['data']['errors'];
-      if (!empty($errors['incorrect-credentials']) && $errors['incorrect-credentials'] == TRUE) {
+      if ($errors['incorrect-credentials']) {
         drupal_set_message(t('Sorry, unrecognized username or password.'), 'error');
       }
       elseif ($errors['name']) {
@@ -1050,10 +1033,8 @@ function _bakery_bake_chocolatechip_cookie($name, $mail, $init) {
     if ($cookie_secure) {
       $type .= 'SSL';
     }
-    bakery_watch('setting new cookie for identification: name = ' . $type  . ', value = ' . bakery_mix(serialize($cookie), 1));
     setcookie($type, bakery_mix(serialize($cookie), 1), $_SERVER['REQUEST_TIME'] + variable_get('bakery_freshness', '3600'), '/', variable_get('bakery_domain', ''), (empty($cookie_secure) ? FALSE : TRUE));
   }
-  //dpm($_COOKIE);
 }
 
 function bakery_taste_oatmeal_cookie() {
@@ -1084,7 +1065,6 @@ function bakery_taste_oatmeal_cookie() {
  * Create a cookie for passing information between sites for registration and login.
  */
 function bakery_bake_oatmeal_cookie($name, $data) {
-  bakery_watch('baking oatmeal cookie');
 
   $key = variable_get('bakery_key', '');
   if (!empty($key)) {
@@ -1109,7 +1089,6 @@ function bakery_bake_oatmeal_cookie($name, $data) {
     if ($cookie_secure) {
       $type .= 'SSL';
     }
-    bakery_watch('setting new cookie for passing info between sites: name = ' . $type  . ', value = ' . bakery_mix(serialize($cookie), 1));
     setcookie($type, bakery_mix(serialize($cookie), 1), $_SERVER['REQUEST_TIME'] + variable_get('bakery_freshness', '3600'), '/', variable_get('bakery_domain', ''), (empty($cookie_secure) ? FALSE : TRUE));
   }
 }
@@ -1383,7 +1362,6 @@ function _bakery_eat_cookie($type = 'CHOCOLATECHIP') {
   if ($cookie_secure) {
     $type .= 'SSL';
   }
-  bakery_watch('about to delete cookie type ' . $type);
   setcookie($type, '', $_SERVER['REQUEST_TIME'] - 3600, '/', '', (empty($cookie_secure) ? FALSE : TRUE));
   setcookie($type, '', $_SERVER['REQUEST_TIME'] - 3600, '/', variable_get('bakery_domain', ''), (empty($cookie_secure) ? FALSE : TRUE));
 }
@@ -1497,7 +1475,6 @@ function bakery_user_authenticate_finalize(&$edit) {
   // Regenerate the session ID to prevent against session fixation attacks.
   drupal_session_regenerate();
   user_module_invoke('login', $edit, $user);
-  bakery_watch('bakery_user_authenticate_finalize');
 }
 
 /**
@@ -1730,10 +1707,4 @@ function bakery_pull_form_submit($form, &$form_state) {
   else {
     $form_state['redirect'] = 'user/' . $result;
   }
-}
-
-function bakery_watch($message) {
-
-  watchdog('***BAKERY***', $message);
-
 }
