@@ -1403,7 +1403,6 @@ function shib_auth_internal_login_register($uid) {
   $sso_id = _shib_auth_get_sso_id_from_uid($uid);
 
   $existing_uid = shib_auth_get_uid_from_sso_id($sso_id);
-  dpm($existing_uid);
 
   $edit = array(
     'name' => $account->name,
@@ -1570,15 +1569,11 @@ function _shib_auth_get_sso_id_from_uid($uid = NULL) {
 
 function shib_auth_get_uid_from_sso_id($sso_id) {
 
-  dpm($sso_id);
-
   $uid = db_select('field_data_field_sso_id', 'c')
               ->fields('c', array('entity_id'))
               ->condition('field_sso_id_value', $sso_id, '=')
               ->execute()
               ->fetchField();
-
-  dpm($uid);
 
   if (empty($uid)) {
     return NULL;
