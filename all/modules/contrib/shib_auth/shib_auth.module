@@ -1570,16 +1570,7 @@ function _shib_auth_get_sso_id_from_uid($uid = NULL) {
 
 function shib_auth_get_uid_from_sso_id($sso_id) {
 
-  dpm($sso_id);
-
-  $query = db_select('field_data_field_sso_id', 'c')
-              ->fields('c', array('entity_id'))
-              ->condition('field_sso_id_value', $sso_id, '=')
-              ->execute();
-  dpm($query);
-  $uid = $query->fetchField();
-
-  dpm($uid);
+  $uid = db_query('SELECT entity_id FROM field_data_field_sso_id WHERE field_sso_id_value = :sso_id', array(':sso_id' => $sso_id))->fetchField();
 
   if (empty($uid)) {
     return NULL;
