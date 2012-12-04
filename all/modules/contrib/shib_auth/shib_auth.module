@@ -143,6 +143,7 @@ function shib_auth_terminate_session($msg = '') {
   }
 
   session_destroy();
+  watchdog('user (shib_auth)', 'Session closed for %name.', array('%name' => $user->name));
   $user = drupal_anonymous_user();
 } //function shib_auth_terminate_session
 

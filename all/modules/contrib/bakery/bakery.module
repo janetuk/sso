@@ -1496,32 +1496,35 @@ function bakery_user_authenticate_finalize(&$edit) {
  */
 function _bakery_user_logout() {
   global $user;
-  dpm($user);
 
-  watchdog('user (bakery)', 'Session closed for %name.', array('%name' => $user->name));
+  // only continue if there is a user logged in
+  if (!empty($user->uid)) {
 
-  // Destroy the current session:
-  session_destroy();
-  module_invoke_all('user_logout', $user);
+    watchdog('user (bakery)', 'Session closed for %name.', array('%name' => $user->name));
 
-  // Load the anonymous user
-  $user = drupal_anonymous_user();
+    // Destroy the current session:
+    session_destroy();
+    module_invoke_all('user_logout', $user);
 
-  // We want to redirect the user to his original destination.
-  $get = $_GET;
-  $destination = !empty($get['q']) ? $get['q'] : '';
-  unset($get['q']);
-  // We append a GET parameter so that the browser reloads the page.
-  $get['no_cache'] = time();
-  // Build the URL we'll redirect to. We set alias to TRUE so as not to try and
-  // hit the unavailable database looking for an alias.
-  $url = url($destination, array('query' => $get, 'absolute' => TRUE, 'alias' => TRUE));
-  // Remove newlines from the URL to avoid header injection attacks.
-  $url = str_replace(array("\n", "\r"), '', $url);
-  // We can't use drupal_goto because it assumes it's in a later boot phase. Set
-  // the status code to be temporary redirect because of the no_cache time.
-  header('Location: ' . $url, TRUE, 307);
-  exit();
+    // Load the anonymous user
+    $user = drupal_anonymous_user();
+
+    // We want to redirect the user to his original destination.
+    $get = $_GET;
+    $destination = !empty($get['q']) ? $get['q'] : '';
+    unset($get['q']);
+    // We append a GET parameter so that the browser reloads the page.
+    $get['no_cache'] = time();
+    // Build the URL we'll redirect to. We set alias to TRUE so as not to try and
+    // hit the unavailable database looking for an alias.
+    $url = url($destination, array('query' => $get, 'absolute' => TRUE, 'alias' => TRUE));
+    // Remove newlines from the URL to avoid header injection attacks.
+    $url = str_replace(array("\n", "\r"), '', $url);
+    // We can't use drupal_goto because it assumes it's in a later boot phase. Set
+    // the status code to be temporary redirect because of the no_cache time.
+    header('Location: ' . $url, TRUE, 307);
+    exit();
+  }
 }
 
 /**
