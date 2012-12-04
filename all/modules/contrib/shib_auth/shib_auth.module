@@ -1400,8 +1400,13 @@ function shib_auth_get_rolename($rid) {
 function shib_auth_internal_login_register($uid) {
 
   $account = _shib_auth_get_user_from_uid($uid);
+  $sso_id = _shib_auth_get_sso_id_from_uid($uid);
 
   dpm($account);
+  dpm($sso_id);
+
+  $existing_uid = shib_auth_get_uid_from_sso_id($uid);
+  dpm($existing_uid);
 
   $edit = array(
     'name' => $account->name,
@@ -1418,10 +1423,15 @@ function shib_auth_internal_login_register($uid) {
     'language' => $account->language,
     //'picture' => $account->picture,
     'init' => $account->init,
+    'sso_id' => array(
+      'und' => array(
+        array('value' => $sso_id),
+      ),
+    ),
   );
 
   // check if this user exists in the local database
-  $local_account = user_load_by_name($account->name);
+  $local_account = user_load($existing_uid);
 
   if (empty($local_account->uid)) {
     // if user doesn't exist, add to database
@@ -1520,5 +1530,58 @@ function _shib_auth_get_user_from_uid($uid = NULL) {
     watchdog('shib_auth', '(_shib_auth_get_user_from_uid) ERROR: SoapFault string = ' . $sf->faultstring);
     return NULL;
   }
+
+}
+
+function _shib_auth_get_sso_id_from_uid($uid = NULL) {
+
+  if (empty($uid)) {
+    return NULL;
+  }
+
+  try {
+    $params = new stdClass;
+    // this is the API Key as provided by Janet
+    $params->key = shib_auth_config('soap_key');
+    // this is optional, a descriptive name for internal reporting
+    // (internal reporting is not currently implemented)
+    $params->name = "SHIB_AUTH";
+
+    // create the client - this URL needs to match the site you are calling from
+    $client = new SoapClient(shib_auth_config('client_site') . '/api/soap?wsdl');
+    // add the authentication headers - keep as below
+    $headers = array(new SoapHeader(shib_auth_config('client_site'), 'AuthHeader', $params));
+    $client->__setSoapHeaders($headers);
+
+    // we can now run our call. See the WSDL for function definitions
+    // This example roughly translates to user_load(), with
+    // the param being the UID, same as the same as core's
+    // user_load()
+    $sso_id = $client->__soapCall('sso_id_api_soap_retrieve', array('uid' => $uid));
+
+    return $sso_id;
+
+  } catch (SoapFault $sf) {
+    // process $sf error
+    watchdog('shib_auth', '(_shib_auth_get_sso_id_from_uid) ERROR: SoapFault code = ' . $sf->faultcode);
+    watchdog('shib_auth', '(_shib_auth_get_sso_id_from_uid) ERROR: SoapFault string = ' . $sf->faultstring);
+    return NULL;
+  }
+
+}
+
+function shib_auth_get_uid_from_sso_id($sso_id) {
+
+  $uid = db_select('field_data_field_sso_id', 'c')
+              ->fields('entity_id')
+              ->condition('field_sso_id_value', $sso_id, '=')
+              ->execute()
+              ->fetchField();
+
+  if (empty($uid)) {
+    return NULL;
+  }
+
+  return $uid;
 
 }
