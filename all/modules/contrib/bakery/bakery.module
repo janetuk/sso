@@ -221,6 +221,12 @@ function bakery_is_shib_session() {
       watchdog('***BAKERY***', 'is shib session');
       return TRUE;
     }
+    else {
+      watchdog('***BAKERY***', 'shib auth user NOT federated');
+    }
+  }
+  else {
+    watchdog('***BAKERY***', 'shib auth does not exist');
   }
   watchdog('***BAKERY***', 'is NOT shib session');
   return FALSE;
