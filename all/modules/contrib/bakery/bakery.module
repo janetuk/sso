@@ -991,6 +991,7 @@ function _bakery_taste_chocolatechip_cookie() {
     // Log out users that have lost their SSO cookie, with the exception of
     // UID 1 and any applied roles with permission to bypass.
     if ($user->uid > 1) {
+      dpm($user);
       // This runs for logged in users. Those folks are going to get a full bootstrap anyway so this isn't a problem.
       drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
       if (!user_access('bypass bakery')) {
@@ -1495,6 +1496,7 @@ function bakery_user_authenticate_finalize(&$edit) {
  */
 function _bakery_user_logout() {
   global $user;
+  dpm($user);
 
   watchdog('user', 'Session closed for %name.', array('%name' => $user->name));
 
