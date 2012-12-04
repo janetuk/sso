@@ -1403,6 +1403,7 @@ function shib_auth_internal_login_register($uid) {
   $sso_id = _shib_auth_get_sso_id_from_uid($uid);
 
   $existing_uid = shib_auth_get_uid_from_sso_id($uid);
+  dpm($existing_uid);
 
   $edit = array(
     'name' => $account->name,
@@ -1427,6 +1428,7 @@ function shib_auth_internal_login_register($uid) {
   );
 
   if (empty($existing_uid)) {
+    watchdog('shib_auth', 'existing uid empty, saving new account');
     // if user doesn't exist, add to database
     $new_account = user_save(drupal_anonymous_user(), $edit);
 
@@ -1438,6 +1440,7 @@ function shib_auth_internal_login_register($uid) {
     $login_uid = $new_account->uid;
   }
   else {
+    watchdog('shib_auth', 'existing uid NOT empty, updating account');
     // if user does exist, update so that we have the latest data
     $local_account = user_load($existing_uid);
     dpm($local_account);
