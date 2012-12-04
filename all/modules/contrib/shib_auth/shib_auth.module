@@ -1402,11 +1402,7 @@ function shib_auth_internal_login_register($uid) {
   $account = _shib_auth_get_user_from_uid($uid);
   $sso_id = _shib_auth_get_sso_id_from_uid($uid);
 
-  dpm($account);
-  dpm($sso_id);
-
   $existing_uid = shib_auth_get_uid_from_sso_id($uid);
-  dpm($existing_uid);
 
   $edit = array(
     'name' => $account->name,
@@ -1450,8 +1446,6 @@ function shib_auth_internal_login_register($uid) {
 
     $login_uid = $new_account->uid;
   }
-
-  dpm($new_account);
 
   // log user in
   $form_state['uid'] = $login_uid;
