@@ -204,7 +204,6 @@ function bakery_user_view($account, $view_mode, $langcode) {
  * Implements hook_boot().
  */
 function bakery_boot() {
-  drupal_load('module', 'devel');
   // only use bakery if user is not logged in through Shib
   if (!bakery_session_valid()) {
     _bakery_taste_chocolatechip_cookie();
@@ -992,7 +991,7 @@ function _bakery_taste_chocolatechip_cookie() {
     // Log out users that have lost their SSO cookie, with the exception of
     // UID 1 and any applied roles with permission to bypass.
     if ($user->uid > 1) {
-      dpm($user);
+      watchdog('***BAKERY***', 'user id = ' . $user->uid);
       // This runs for logged in users. Those folks are going to get a full bootstrap anyway so this isn't a problem.
       drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
       if (!user_access('bypass bakery')) {
