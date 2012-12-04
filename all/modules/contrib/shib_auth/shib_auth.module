@@ -1573,7 +1573,7 @@ function _shib_auth_get_sso_id_from_uid($uid = NULL) {
 function shib_auth_get_uid_from_sso_id($sso_id) {
 
   $uid = db_select('field_data_field_sso_id', 'c')
-              ->fields('c.entity_id')
+              ->fields('c', array('entity_id'))
               ->condition('c.field_sso_id_value', $sso_id, '=')
               ->execute()
               ->fetchField();
