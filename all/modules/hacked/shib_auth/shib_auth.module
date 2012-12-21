@@ -1598,20 +1598,15 @@ function shib_auth_get_uid_from_sso_id($sso_id) {
 function shib_auth_is_user_federated() {
 
   global $user;
-  dpm($user);
   $return = FALSE;
 
   $uname_key = shib_auth_config('username_variable');
   $persistent_id = !empty($_SERVER[$uname_key]) ? $_SERVER[$uname_key] : NULL;
-  dpm($persistent_id);
 
   $authmap = _shib_auth_get_shib_authmap_from_persistent_id($persistent_id);
-  dpm($authmap);
   if (!empty($authmap) && $authmap->uid == $user->uid) {
     $return = TRUE;
   }
-
-  watchdog('***SHIB AUTH***', 'user is federated? ' . $return);
 
   return $return;
 
