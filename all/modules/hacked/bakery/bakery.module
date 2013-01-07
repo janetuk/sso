@@ -983,12 +983,15 @@ function _bakery_taste_chocolatechip_cookie() {
     // No cookie or invalid cookie
     if (!$cookie) {
       global $user;
-      // Log out users that have lost their SSO cookie, with the exception of
-      // UID 1 and any applied roles with permission to bypass.
+      // Log out users that have lost their SSO cookie, with the exception of:
+      // - UID 1
+      // - roles with permission to bypass
+      // - masquerading as another user
       if ($user->uid > 1) {
-        // This runs for logged in users. Those folks are going to get a full bootstrap anyway so this isn't a problem.
+        // This runs for logged in users. Those folks are going to get a full
+        // bootstrap anyway so this isn't a problem.
         drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-        if (!user_access('bypass bakery')) {
+        if (!(user_access('bypass bakery') || (module_exists('masquerade') && isset($_SESSION['masquerading'])))) {
           watchdog('bakery', 'Logging out the user with the bad cookie.');
           _bakery_user_logout();
         }
