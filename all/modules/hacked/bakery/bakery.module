@@ -502,7 +502,7 @@ function bakery_settings($form, &$form_state) {
   $default = variable_get('bakery_supported_fields', array('mail' => 'mail', 'name' => 'name'));
   $default['mail'] = 'mail';
   $default['name'] = 'name';
-  $options = array('name' => t('username'), 'mail' => t('e-mail'), 'status' => t('status'), 'picture' => t('user picture'), 'language' => t('language'), 'signature' => t('signature'), 'ssoid' => t('SSO ID'));
+  $options = array('name' => t('username'), 'mail' => t('e-mail'), 'status' => t('status'), 'picture' => t('user picture'), 'language' => t('language'), 'signature' => t('signature'),);
   if (module_exists('profile')) {
     $result = db_query('SELECT name, title FROM {profile_field} ORDER BY category, weight');
     foreach ($result as $field) {
@@ -1205,29 +1205,11 @@ function bakery_eat_thinmint_cookie() {
  * @param boolean $or_email load account by name or email. Useful for getting
  *  account data from a password request where you get name or email.
  * @return The newly created local UID or FALSE.
- *
- * MvdH changes - take SSOID as a parameter, then use that to try and
- * find existing account.
  */
-function bakery_request_account($name, $or_email = FALSE, $ssoid) {
+function bakery_request_account($name, $or_email = FALSE) {
   global $base_url;
 
-  // load the shib_auth module file
-  drupal_load('module', 'shib_auth');
-
-  // use the shib_auth function to check if the SSOID is associated to a UID
-  $existing_account_id = shib_auth_get_uid_from_sso_id($ssoid);
-
-  /*if (!$existing_account && $or_email) {
-    $account = user_load_by_mail($name);
-  }*/
-  // We return FALSE in cases that the account already exists locally or if
-  // there was an error along the way of requesting and creating it.
-  if (!empty($existing_account_id)) {
-    return FALSE;
-  }
-
-  /*$existing_account = user_load_by_name($name);
+  $existing_account = user_load_by_name($name);
   if (!$existing_account && $or_email) {
     $account = user_load_by_mail($name);
   }
@@ -1235,7 +1217,7 @@ function bakery_request_account($name, $or_email = FALSE, $ssoid) {
   // there was an error along the way of requesting and creating it.
   if ($existing_account) {
     return FALSE;
-  }*/
+  }
 
   $master = variable_get('bakery_master', 'http://drupal.org/');
   $key = variable_get('bakery_key', '');
@@ -1295,19 +1277,7 @@ function bakery_request_account($name, $or_email = FALSE, $ssoid) {
   // Add any supported sync fields.
   foreach (variable_get('bakery_supported_fields', array('mail' => 'mail', 'name' => 'name')) as $type => $enabled) {
     if ($enabled && isset($cookie[$type])) {
-      switch ($type) {
-        // we need to add the ssoid value in a different format as it is a custom field
-        case 'ssoid':
-          $new_account['field_sso_id'] = array(
-            'und' => array(
-              array('value' => $cookie[$type]),
-            )
-          );
-          break;
-        default:
-          $new_account[$type] = $cookie[$type];
-          break;
-      }
+      $new_account[$type] = $cookie[$type];
     }
   }
   // Create account.
@@ -1348,8 +1318,6 @@ function bakery_taste_gingerbread_cookie() {
 
 /**
  * Respond with account information.
- *
- * MvdH changes - add the SSOID to the payload
  */
 function bakery_eat_gingerbread_cookie() {
   // Session was set in validate.
@@ -1363,7 +1331,6 @@ function bakery_eat_gingerbread_cookie() {
   unset($_SESSION['bakery']['uid']);
   $key = variable_get('bakery_key', '');
 
-
   $account = user_load_by_name($name);
   if (!$account && $or_email) {
     $account = user_load_by_mail($name);
@@ -1371,19 +1338,10 @@ function bakery_eat_gingerbread_cookie() {
   if ($account) {
     _bakery_save_slave_uid($account, $slave, $slave_uid);
 
-
-    // get the user's SSOID
-    $ssoid = db_select('field_data_field_sso_id', 'c')
-                  ->fields('c', array('field_sso_id_value'))
-                  ->condition('entity_id', $account->uid, '=')
-                  ->execute()
-                  ->fetchField();
-
     $payload = array();
     $payload['name'] = $account->name;
     $payload['mail'] = $account->mail;
     $payload['uid'] = $account->uid; // For use in slave init field.
-    $payload['ssoid'] = $ssoid;
     // Add any synced fields.
     foreach (variable_get('bakery_supported_fields', array('mail' => 'mail', 'name' => 'name')) as $type => $enabled) {
       if ($enabled && $account->$type) {
