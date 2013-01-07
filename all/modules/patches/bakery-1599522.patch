@@ -1,0 +1,36 @@
+From f9024fcbc7549b1e152085bff1d52bffde4559e6 Mon Sep 17 00:00:00 2001
+From: Neil Drumm <drumm@delocalizedham.com>
+Date: Thu, 24 May 2012 18:16:29 -0700
+Subject: [PATCH] [#1599522] Compatibility with masquerade
+
+---
+ bakery.module |   11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/bakery.module b/bakery.module
+index 5617c83..3600681 100644
+--- a/bakery.module
++++ b/bakery.module
+@@ -980,12 +980,15 @@ function _bakery_taste_chocolatechip_cookie() {
+   // No cookie or invalid cookie
+   if (!$cookie) {
+     global $user;
+-    // Log out users that have lost their SSO cookie, with the exception of
+-    // UID 1 and any applied roles with permission to bypass.
++    // Log out users that have lost their SSO cookie, with the exception of:
++    // - UID 1
++    // - roles with permission to bypass
++    // - masquerading as another user
+     if ($user->uid > 1) {
+-      // This runs for logged in users. Those folks are going to get a full bootstrap anyway so this isn't a problem.
++      // This runs for logged in users. Those folks are going to get a full
++      // bootstrap anyway so this isn't a problem.
+       drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+-      if (!user_access('bypass bakery')) {
++      if (!(user_access('bypass bakery') || (module_exists('masquerade') && isset($_SESSION['masquerading'])))) {
+         watchdog('bakery', 'Logging out the user with the bad cookie.');
+         _bakery_user_logout();
+       }
+-- 
+1.7.10.2 (Apple Git-33)
+
