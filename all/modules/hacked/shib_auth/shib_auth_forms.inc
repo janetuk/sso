@@ -146,7 +146,6 @@ function _shib_auth_test($uid, $field) {
   }
 
   try {
-    drupal_set_message(t('uid ' . $uid . ', field ' . $field));
     $params = new stdClass;
     // this is the API Key as provided by Janet
     $params->key = shib_auth_config('soap_key');
@@ -164,18 +163,7 @@ function _shib_auth_test($uid, $field) {
     // This example roughly translates to user_load(), with
     // the param being the UID, same as the same as core's
     // user_load()
-    drupal_set_message(t('just about to run soap call'));
     $return = $client->__soapCall('profile2_soap_retrieve', array('uid' => $uid, 'field' => $field));
-    drupal_set_message(t('finished, about to return'));
-
-    // include the services error functions, if they haven't been already
-    module_load_include('inc', 'services', 'services.runtime');
-
-    if (empty($return)) {
-      return services_error(t('Organisation !field is not a registered organisation for this user', array(
-        '!field' => $field,
-      )), 406);
-    }
 
     return $return;
 
