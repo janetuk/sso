@@ -12,7 +12,7 @@
 function shib_auth_admin_general($form, &$form_state) {
   $form = array();
 
-  $return = _shib_auth_test(10, 'all');
+  $return = _shib_auth_test(10, 'm');
   dpm($return);
 
   $form['shib_handler_settings'] = array(
