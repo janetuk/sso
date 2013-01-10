@@ -169,13 +169,13 @@ function _shib_auth_test($uid, $field) {
     drupal_set_message(t('finished, about to return'));
 
     // include the services error functions, if they haven't been already
-    /*module_load_include('inc', 'services', 'services.runtime');
+    module_load_include('inc', 'services', 'services.runtime');
 
     if (empty($return)) {
       return services_error(t('Organisation !field is not a registered organisation for this user', array(
         '!field' => $field,
       )), 406);
-    }*/
+    }
 
     return $return;
 
