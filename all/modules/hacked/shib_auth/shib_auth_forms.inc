@@ -167,6 +167,11 @@ function _shib_auth_test($uid, $field) {
     drupal_set_message(t('just about to run soap call'));
     $return = $client->__soapCall('profile2_soap_retrieve', array('uid' => $uid, 'field' => $field));
     drupal_set_message(t('finished, about to return'));
+    if (empty($return)) {
+      return services_error(t('Organisation !field is not a registered organisation for this user', array(
+            '!company' => $field,
+          )), 406);
+    }
 
     return $return;
 
