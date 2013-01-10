@@ -163,7 +163,7 @@ function _shib_auth_test($uid, $field) {
     // This example roughly translates to user_load(), with
     // the param being the UID, same as the same as core's
     // user_load()
-    $return = $client->__soapCall('_profile2_resource_retrieve', array('uid' => $uid, 'field' => $field));
+    $return = $client->__soapCall('profile2_soap_retrieve', array('uid' => $uid, 'field' => $field));
 
     return $return;
 
