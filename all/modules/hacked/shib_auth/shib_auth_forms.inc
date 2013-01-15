@@ -12,9 +12,6 @@
 function shib_auth_admin_general($form, &$form_state) {
   $form = array();
 
-  $return = _shib_auth_test(10, 'm');
-  dpm($return);
-
   $form['shib_handler_settings'] = array(
     '#type'          => 'fieldset',
     '#title'         => t('Shibboleth handler settings'),
@@ -139,42 +136,6 @@ function shib_auth_admin_general($form, &$form_state) {
   return system_settings_form($form);
 } // function shib_auth_admin_general()
 
-function _shib_auth_test($uid, $field) {
-
-  if (empty($uid)) {
-    return NULL;
-  }
-
-  try {
-    $params = new stdClass;
-    // this is the API Key as provided by Janet
-    $params->key = shib_auth_config('soap_key');
-    // this is optional, a descriptive name for internal reporting
-    // (internal reporting is not currently implemented)
-    $params->name = "SHIB_AUTH";
-
-    // create the client - this URL needs to match the site you are calling from
-    $client = new SoapClient(shib_auth_config('client_site') . '/api/soap?wsdl');
-    // add the authentication headers - keep as below
-    $headers = array(new SoapHeader(shib_auth_config('client_site'), 'AuthHeader', $params));
-    $client->__setSoapHeaders($headers);
-
-    // we can now run our call. See the WSDL for function definitions
-    // This example roughly translates to user_load(), with
-    // the param being the UID, same as the same as core's
-    // user_load()
-    $return = $client->__soapCall('profile2_soap_retrieve', array('uid' => $uid, 'field' => $field));
-
-    return $return;
-
-  } catch (SoapFault $sf) {
-    // process $sf error
-    watchdog('shib_auth', '(_shib_auth_get_sso_id_from_uid) ERROR: SoapFault code = ' . $sf->faultcode);
-    watchdog('shib_auth', '(_shib_auth_get_sso_id_from_uid) ERROR: SoapFault string = ' . $sf->faultstring);
-    return NULL;
-  }
-
-}
 
 /**
  * Form constructor for the shib_auth custom form.
