@@ -1,0 +1,14 @@
+name = "Janet API Authentication for SOAP Server"
+description = "Adds API authentication to soap_server module"
+core = "7.x"
+package = "Janet SOAP"
+version = "7.x-1.x-dev"
+project = "janet_soap_api"
+
+dependencies[] = ctools
+dependencies[] = features
+dependencies[] = services
+dependencies[] = soap_server
+features[ctools][] = services:services:3
+features[features_api][] = api:1
+features[services_endpoint][] = soap_api

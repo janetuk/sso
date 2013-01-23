@@ -1,0 +1,376 @@
+<?php
+/**
+ * @file
+ * janet_soap_api.module
+ *
+ * Code for the SOAP Server Authentication module by Janet API Key.
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function janet_soap_api_ctools_plugin_api() {
+  list($module, $api) = func_get_args();
+  if ($module == "services" && $api == "services") {
+    return array("version" => "3");
+  }
+}
+
+/**
+ * Implementation of hook_services_authentication_info().
+ *
+ * Adds this as an authentication client for the services module.
+ */
+function janet_soap_api_services_authentication_info() {
+  return array(
+    'title'             => t('Janet API authentication'),
+    'description'       => t("Uses Janet API keys to validate."),
+    'authenticate_call' => '_janet_soap_api_sessions_authenticate_call',
+    'security_settings' => '_janet_soap_api_security_settings',
+  );
+}
+
+/**
+ * Authenticates a call using Janet API keys
+ *
+ * Callback from janet_soap_api_services_authentication_info()
+ *
+ * @see janet_soap_api_services_authentication_info()
+ *
+ * Called from within ServicesSoapServer class through services_controller_execute()
+ * @see ServicesSoapServer::__call()
+ *
+ * @param array $settings
+ *  The settings for the authentication module.
+ * @param array $method
+ *  The method that's being called
+ * @param array $args
+ *  The arguments that are being used to call the method
+ * @return void
+ *  Returns nothing, or a error message if authentication fails
+ *
+ * @throws Exception
+ *   Caught in this function to add the 401 Authenticate Header, and
+ *   rethrown to the calling function
+ */
+function _janet_soap_api_sessions_authenticate_call($settings, $method, $args) {
+  $soap_headers = janet_soap_api_soap_headers();
+  $soap_body = janet_soap_api_soap_body();
+  $request_method = key($soap_body);
+
+  try {
+    if(empty($soap_headers['AuthHeader']['key'])) {
+      throw new Exception('API Key is required in request.');
+    }
+
+    janet_soap_api_soap_auth($soap_headers['AuthHeader']['key'], $request_method);
+
+    // if still here then no error, add the api key to the server object
+    services_set_server_info('janet_soap_api_key', $soap_headers['AuthHeader']['key']);
+  } catch (Exception $e) {
+    // user is not authed to use this site
+    drupal_add_http_header('WWW-Authenticate', 'Error: '.$e->getMessage());
+    throw new Exception($e);
+  }
+}
+
+/**
+ * Authenticates an API key against the function it's trying to call
+ *
+ * @param $api_key
+ * @param $function_name
+ *   function name from the SOAP XML that the SoapClient is trying
+ *   to call
+ *
+ * @return bool|void
+ *   returns either true, or throws an exception
+ *
+ * @throws Exception
+ *   Throws standard error that is picked up from calling function
+ *   and processed accordingly
+ *   @see _janet_soap_api_sessions_authenticate_call()
+ */
+function janet_soap_api_soap_auth($api_key, $function_name) {
+  if($permissions = _janet_soap_api_validate_api_key($api_key)) {
+    if(array_key_exists($function_name, $permissions)) {
+      if($permissions[$function_name]) {
+        return true;
+      } else {
+        throw new Exception(t('API Key not authorised for method %function_name', array('%function_name' => $function_name)));
+      }
+    } else {
+      throw new Exception(t('Requested method %function_name not found', array('%function_name' => $function_name)));
+    }
+  } else {
+    throw new Exception('Invalid API Key');
+  }
+}
+
+/**
+ * Gets the server request headers
+ *
+ * @param bool $reset
+ *  Pass TRUE if the headers should be re-read
+ * @return array
+ *  Returns the server headers, if any
+ */
+function janet_soap_api_soap_headers($reset = FALSE) {
+  $request = janet_soap_api_soap_request();
+  return $request['Header'];
+}
+
+/**
+ * Gets the server request body
+ *
+ * @param bool $reset
+ *  Pass TRUE if the headers should be re-read
+ * @return array
+ *  Returns the server headers, if any
+ */
+function janet_soap_api_soap_body($reset = FALSE) {
+  $request = janet_soap_api_soap_request();
+  return $request['Body'];
+}
+
+/**
+ * Function reads the php://input to process the soap headers
+ *
+ * Amazingly, though PHP's inbuilt SoapClient supports the
+ * SoapClient::__setSoapHeaders() method, there is no direct way to
+ * read these headers when accessing through SoapServer class. The
+ * solution is a slightly disguting method of reading, and parsing
+ * with xml, the php://input, which in this case amounts to the SOAP
+ * XML request that was made.
+ *
+ * From this we can traverse the XML to find the SoapHeaders, and in
+ * turn (from calling functions) check the API Key.
+ *
+ * @return mixed
+ */
+function janet_soap_api_soap_request() {
+  // given we're running simplexml functions, and they're quite
+  // memory intensive, we'll cache the post-process array into the
+  // drupal_static variable set
+  $auth_request = &drupal_static(__FUNCTION__);
+
+  if (empty($auth_request)) {
+    // auth request isn't already set, so load the input_xml from
+    // the php://input stream
+    $input_xml = file_get_contents('php://input');
+    // convert it to SimpleXML object
+    $soap_request = simplexml_load_string($input_xml);
+
+    // remove the namespaces from the XML - in this case they're not
+    // needed at all, and json_encode doesn't work properly when
+    // NSs are referenced in the XML
+    $namespaces = $soap_request->getDocNamespaces();
+    foreach($namespaces as $ns => $ns_value) {
+      $input_xml = str_replace($ns.':', '', $input_xml);
+    }
+
+    // this very simple line converts the input_xml to json, then
+    // back. On returning it with json_decode, it is processed to a
+    // PHP array, not XML. Process: XML -> JSON -> array
+    //
+    // setting this to $auth_request also updates the static variable
+    $auth_request = json_decode(json_encode(simplexml_load_string($input_xml)),1);
+  }
+
+  // return the cached version
+  return $auth_request;
+}
+
+/**
+ * Function returns true or false for a specific function call
+ * against a given API key, thus validating whether the calling
+ * script is permitted to run this function or not.
+ *
+ * @param $api_key
+ *   API Key as picked up from the SOAP headers
+ * @return array|bool
+ */
+function _janet_soap_api_validate_api_key($api_key) {
+  // load the key from the database
+  if($key = janet_soap_api_key_load_by_field('api_key', $api_key)) {
+    // key exists, check if it is 'active' or disabled
+    if($key->status) {
+      // key is active, return permissions (in $key->data)
+      return unserialize($key->data);
+    } else {
+      // key exists, but isn't active
+      return false;
+    }
+  } else {
+    // key doesn't exist
+    return false;
+  }
+}
+
+/**
+ * Settings callback function for
+ * @param $settings
+ * @param $form_state
+ * @return array
+ */
+function _janet_soap_api_security_settings($settings, &$form_state) {
+  if(!user_access('administer janet api keys')) {
+    drupal_access_denied();
+    exit;
+  } else {
+    module_load_include('inc', 'janet_soap_api', 'janet_soap_api.admin');
+
+    $form = janet_soap_api_authentication_page($settings, $form_state);
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function janet_soap_api_permission() {
+  return array(
+    'administer janet api keys' => array(
+      'title' => t('Administer Janet SOAP API Keys'),
+      'description' => t('Configure and setup Janet API Keys.'),
+    ),
+  );
+}
+
+/**
+* Implements hook_menu().
+*/
+function janet_soap_api_menu() {
+ $items['admin/structure/services/list/%soap_server_endpoint/authentication/%ctools_js/%janet_soap_api_key/edit'] = array(
+   'page callback'    => 'janet_soap_api_edit_key',
+   'page arguments'   => array(4, 6, 7),
+   'access arguments' => array('administer janet api keys'),
+   'file' => 'janet_soap_api.admin.inc',
+ );
+  $items['admin/structure/services/list/%soap_server_endpoint/authentication/%ctools_js/add'] = array(
+   'page callback'    => 'janet_soap_api_add_key',
+   'page arguments'   => array(4, 6),
+   'access arguments' => array('administer janet api keys'),
+   'file' => 'janet_soap_api.admin.inc',
+ );
+  $items['admin/structure/services/list/%soap_server_endpoint/authentication/%ctools_js/%janet_soap_api_key/delete'] = array(
+   'page callback'    => 'janet_soap_api_delete_key',
+   'page arguments'   => array(4, 6, 7),
+   'access arguments' => array('administer janet api keys'),
+   'file' => 'janet_soap_api.admin.inc',
+ );
+ return $items;
+}
+
+/**
+ * API Key menu loader
+ *
+ * Return the API Key from the KID
+ *
+ * @param $key_id
+ * @return object|bool
+ *   returns either the loaded API Key object or false if not found
+ */
+function janet_soap_api_key_load($key_id) {
+  $key = janet_soap_api_key_load_by_field('kid', $key_id);
+  if (is_object($key)) {
+    return $key;
+  }
+  return FALSE;
+}
+
+/**
+ * Callback for loading a key based on a field
+ *
+ * Normal implementations would be:
+ * janet_soap_api_key_load_by_field
+ *
+ * @param $field
+ *   field agaist which to search
+ *   normally would be (string) 'kid' OR (string) 'api_key'
+ * @param $value
+ *   value against which to search.
+ *   normally would be either the kid or the key itself
+ * @return mixed|null
+ *   if a key exists, return the stdClass of the key, else return
+ *   null
+ */
+function janet_soap_api_key_load_by_field($field, $value) {
+  $result = db_select('janet_api_keys', 'k')
+    ->fields('k')
+    ->condition($field, $value)
+    ->execute()
+    ->fetchAll();
+  return (!empty($result)) ? array_shift($result) : null;
+}
+
+/**
+ * Implements hook_janet_soap_api_api_key_operations()
+ */
+function janet_soap_api_janet_soap_api_api_key_operations() {
+  $operations = array(
+    'activate_keys' => array(
+      'label' => t('Make Keys Active'),
+      'callback' => '_janet_soap_api_update_keys',
+      'callback arguments' => array('status' => 1),
+    ),
+    'deactivate_keys' => array(
+      'label' => t('Make Keys Inactive'),
+      'callback' => '_janet_soap_api_update_keys',
+      'callback arguments' => array('status' => 0),
+    ),
+    'delete_keys' => array(
+      'label' => t('Delete Keys'),
+      'callback' => '_janet_soap_api_delete_keys',
+    ),
+  );
+
+  return $operations;
+}
+
+/**
+ * Callback function for hook_janet_soap_api_api_key_operations
+ * operation.
+ *
+ * Updates a number of keys in one go, as of the fields defined.
+ *
+ * Parameters in $updates are defined in
+ * hook_janet_soap_api_api_key_operations()
+ *
+ * @see janet_soap_api_janet_soap_api_api_key_operstions()
+ *
+ * @param $keys
+ *   an array of keys to update. Key and value are the same, which is
+ *   the KID from janet_api_keys
+ * @param $updates
+ *   array of operations to perform
+ */
+function _janet_soap_api_update_keys($keys, $updates) {
+  foreach ($keys as $kid) {
+    db_update('janet_api_keys')
+      ->fields($updates)
+      ->condition('kid', $kid)
+      ->execute();
+  }
+  drupal_set_message(t('The update has been performed.'));
+}
+
+/**
+ * Callback function for hook_janet_soap_api_api_key_operations
+ * operation.
+ *
+ * Deletes a number of keys in one go.
+ *
+ * @see janet_soap_api_janet_soap_api_api_key_operstions()
+ *
+ * @param $keys
+ *   an array of keys to update. Key and value are the same, which is
+ *   the KID from janet_api_keys
+ */
+function _janet_soap_api_delete_keys($keys) {
+  foreach ($keys as $kid) {
+    db_delete('janet_api_keys')
+      ->condition('kid', $kid)
+      ->execute();
+  }
+  drupal_set_message(t('The update has been performed.'));
+}

@@ -1,0 +1,99 @@
+<?php
+/**
+ * @file
+ * janet_soap_api.install
+ *
+ * Installation hooks for Janet SOAP API module.
+ *
+ */
+
+/*
+ * Implements hook_schema()
+ * Creates tables to store the keys and permissions
+ */
+function janet_soap_api_schema() {
+  $schema['janet_api_keys'] = array(
+    'description' => 'Holds information on API Keys for the Janet SOAP Server',
+    'fields' => array(
+      'kid'    => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'api_key' => array(
+        'description' => 'The API Key string for this key',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'A brief description of this key, to give information as to who the owner is',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'recipient' => array(
+        'description' => 'The name of the recipient',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'recipient_email' => array(
+        'description' => 'The email address of the recipient',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that created this key',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'Boolean indicating whether the key is active or inactive',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the key was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the key was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'description' => 'Serialised function permissions for this key.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+    ),
+    'indexes' => array(
+      'key_changed' => array('changed'),
+      'key_created' => array('created'),
+      'uid' => array('uid'),
+    ),
+    'unique keys' => array(
+      'api_key' => array('api_key'),
+    ),
+    'foreign keys' => array(
+      'key_author' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+    'primary key' => array('kid'),
+  );
+  return $schema;
+}
